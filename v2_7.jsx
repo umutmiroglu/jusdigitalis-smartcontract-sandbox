@@ -888,8 +888,13 @@ const COMPLEXITY_EVENTS = {
   doc_missing:   { prob:0.10, label:"📁 Kritik belge eksik — noter tasdiki istendi.",            addYears:0, color:"#f39c12" },
 };
 
-const LAWYER_INFLATION_RATE = 0.09; // Türkiye Barolar Birliği asgari ücret artışı
-const COURT_INFLATION_RATE  = 0.09; // yıllık mahkeme harcı artışı
+const LAWYER_INFLATION_RATE    = 0.09; // Türkiye Barolar Birliği asgari ücret artışı
+const COURT_INFLATION_RATE     = 0.09; // yıllık mahkeme harcı artışı
+const BOT_PRICE_INFLATION_RATE = 0.15; // Türk enflasyonu — mal/hizmet fiyat artışı
+const LAWSUIT_START_YEAR  = 2021;
+const LAWSUIT_START_MONTH = 10; // Kasım (0-indexed)
+const MS_PER_TUNNEL_YEAR  = 5000; // ms per lawsuit year in TimeTunnel
+const TR_MONTHS = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
 
 function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
   // v3a: randomize lawsuit duration within bot's min/max range
@@ -902,8 +907,9 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
   // inflation helpers — y: number of elapsed inflation cycles (0 = no inflation yet)
   const initialLawyerFee = lawyer.fee;
   const initialCourtFee  = isArb ? computeArbitrationFee(bot.basePrice) : computeCourtFee(bot.basePrice);
-  const lawyerFeeAt = y => Math.round(initialLawyerFee * Math.pow(1 + LAWYER_INFLATION_RATE, y));
-  const courtFeeAt  = y => Math.round(initialCourtFee  * Math.pow(1 + COURT_INFLATION_RATE,  y));
+  const lawyerFeeAt  = y => Math.round(initialLawyerFee * Math.pow(1 + LAWYER_INFLATION_RATE,    y));
+  const courtFeeAt   = y => Math.round(initialCourtFee  * Math.pow(1 + COURT_INFLATION_RATE,     y));
+  const botPriceAt   = y => Math.round(bot.basePrice    * Math.pow(1 + BOT_PRICE_INFLATION_RATE, y));
 
   const baseYearEvents = useMemo(()=>buildYearEvents(maxYears, isArb),[]);
   const [currentYear, setCurrentYear] = useState(0);
@@ -913,7 +919,28 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
   const [konkordato, setKonkordato] = useState(false);
   const [totalInflationCost, setTotalInflationCost] = useState(0);
   const inflCostRef = useRef(0); // mutable ref for closure inside setTimeout
+
+  // real-calendar clock — 12 months per lawsuit year (MS_PER_TUNNEL_YEAR ms)
+  const [msElapsed, setMsElapsed] = useState(0);
+  const msElapsedRef = useRef(0);
+  const MS_PER_MONTH = MS_PER_TUNNEL_YEAR / 12;
+  const totalMonthsElapsed  = Math.floor(msElapsed / MS_PER_MONTH);
+  const calYear      = LAWSUIT_START_YEAR  + Math.floor((LAWSUIT_START_MONTH + totalMonthsElapsed) / 12);
+  const calMonthIdx  = (LAWSUIT_START_MONTH + totalMonthsElapsed) % 12;
+  const yearsElapsed = Math.floor(totalMonthsElapsed / 12);
+  const monthsInYear = totalMonthsElapsed % 12;
+
   const logEndRef = useRef(null);
+
+  // calendar tick — stops when done
+  useEffect(()=>{
+    if (done) return;
+    const iv = setInterval(()=>{
+      msElapsedRef.current += 100;
+      setMsElapsed(msElapsedRef.current);
+    }, 100);
+    return ()=>clearInterval(iv);
+  }, [done]);
 
   useEffect(()=>{ logEndRef.current?.scrollIntoView({behavior:"smooth"}); },[log]);
 
@@ -953,14 +980,17 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
       // inflation event — fees increase every year after the first
       let inflationEvent = null;
       if (currentYear >= 1) {
-        const oldLawyer = lawyerFeeAt(currentYear - 1);
-        const newLawyer = lawyerFeeAt(currentYear);
-        const oldCourt  = courtFeeAt(currentYear - 1);
-        const newCourt  = courtFeeAt(currentYear);
+        const oldLawyer   = lawyerFeeAt(currentYear - 1);
+        const newLawyer   = lawyerFeeAt(currentYear);
+        const oldCourt    = courtFeeAt(currentYear - 1);
+        const newCourt    = courtFeeAt(currentYear);
+        const oldBotPrice = botPriceAt(currentYear - 1);
+        const newBotPrice = botPriceAt(currentYear);
         const delta = (newLawyer - oldLawyer) + (newCourt - oldCourt);
         inflCostRef.current += delta;
         setTotalInflationCost(inflCostRef.current);
-        inflationEvent = { year: currentYear+1, oldLawyer, newLawyer, oldCourt, newCourt, delta };
+        const inflCalYear = LAWSUIT_START_YEAR + currentYear;
+        inflationEvent = { year: currentYear+1, calYear: inflCalYear, oldLawyer, newLawyer, oldCourt, newCourt, oldBotPrice, newBotPrice, delta };
       }
 
       setLog(l=>[...l, {year:currentYear+1, courtText, judgeText, winProb:ev.winProb, complexityEvent, inflationEvent}]);
@@ -982,6 +1012,9 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
           <span style={{color:"#a0aec0",fontSize:13,fontStyle:"italic"}}>
             "{finalWon?"Deliller yeterli bulundu. Karar müvekkil lehine.":"Yetersiz ispat. Karar karşı taraf lehine."}"
           </span>
+        </div>
+        <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(0,153,255,.08)",border:"1px solid rgba(0,153,255,.2)",borderRadius:10,padding:"7px 16px",marginBottom:12,fontSize:13,color:"#63b3ed"}}>
+          📅 {TR_MONTHS[calMonthIdx]} {calYear} · Geçen Süre: {yearsElapsed} yıl {monthsInYear} ay
         </div>
         <p style={{color:"#718096",fontSize:13,marginBottom:8}}>
           {maxYears} yıl sonra paranın değeri: <strong style={{color:"#f39c12"}}>%{Math.round((INFLATION_BY_YEAR[Math.min(maxYears,10)]||0.2)*100)}</strong>
@@ -1006,6 +1039,23 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
         <div style={{color:"#718096",fontSize:11,marginBottom:6,fontFamily:"'Space Mono',monospace",letterSpacing:2}}>
           ZAMAN TÜNELİ — {isArb?"TAHKİM":"MAHKEME"} SÜRECİ
         </div>
+
+        {/* Calendar date & elapsed time */}
+        <div style={{display:"flex",justifyContent:"center",gap:16,marginBottom:10,flexWrap:"wrap"}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,background:"rgba(0,153,255,.1)",border:"1px solid rgba(0,153,255,.25)",borderRadius:8,padding:"5px 12px"}}>
+            <span style={{fontSize:14}}>📅</span>
+            <span style={{color:"#63b3ed",fontFamily:"'Space Mono',monospace",fontSize:13,fontWeight:700}}>
+              {TR_MONTHS[calMonthIdx]} {calYear}
+            </span>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:8,padding:"5px 12px"}}>
+            <span style={{fontSize:12}}>⏱️</span>
+            <span style={{color:"#a0aec0",fontSize:12}}>
+              Geçen Süre: <strong style={{color:"#e2e8f0"}}>{yearsElapsed > 0 ? `${yearsElapsed} yıl ` : ""}{monthsInYear} ay</strong>
+            </span>
+          </div>
+        </div>
+
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:10}}>
           <span style={{fontSize:24}}>{JUDGE_EMOJI}</span>
           <div>
@@ -1036,9 +1086,21 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
             )}
             {/* Inflation event row */}
             {entry.inflationEvent && (
-              <div style={{background:"rgba(255,107,53,.06)",borderLeft:"3px solid #ff6b35",borderRight:"1px solid rgba(255,255,255,.06)",borderBottom:"1px solid rgba(255,255,255,.06)",padding:"7px 14px",display:"flex",gap:8,alignItems:"center",animation:"judgeIn .3s ease-out"}}>
-                <span style={{color:"#ff6b35",fontSize:12,fontWeight:700}}>📈 {entry.inflationEvent.year}. yıl: Avukat ücreti {entry.inflationEvent.oldLawyer}→{entry.inflationEvent.newLawyer} JC</span>
-                <span style={{fontSize:10,background:"rgba(255,107,53,.15)",color:"#f6ad55",borderRadius:4,padding:"1px 6px",flexShrink:0}}>+{entry.inflationEvent.delta} JC</span>
+              <div style={{background:"rgba(255,107,53,.06)",borderLeft:"3px solid #ff6b35",borderRight:"1px solid rgba(255,255,255,.06)",borderBottom:"1px solid rgba(255,255,255,.06)",padding:"8px 14px",animation:"judgeIn .3s ease-out"}}>
+                <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:4}}>
+                  <span style={{color:"#ff6b35",fontSize:12,fontWeight:700}}>
+                    📈 {entry.inflationEvent.calYear}: Avukat ücreti {entry.inflationEvent.oldLawyer}→{entry.inflationEvent.newLawyer} JC
+                  </span>
+                  <span style={{fontSize:10,background:"rgba(255,107,53,.15)",color:"#f6ad55",borderRadius:4,padding:"1px 6px",flexShrink:0,whiteSpace:"nowrap"}}>+{entry.inflationEvent.delta} JC</span>
+                </div>
+                <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                  <span style={{color:"#718096",fontSize:11}}>
+                    Harç: {entry.inflationEvent.oldCourt}→<strong style={{color:"#f6ad55"}}>{entry.inflationEvent.newCourt} JC</strong>
+                  </span>
+                  <span style={{color:"#718096",fontSize:11}}>
+                    Sözleşme değeri: {entry.inflationEvent.oldBotPrice}→<strong style={{color:"#fc8181"}}>{entry.inflationEvent.newBotPrice} JC</strong> (+%{Math.round(BOT_PRICE_INFLATION_RATE*100)})
+                  </span>
+                </div>
               </div>
             )}
             {/* Judge speech bubble */}
