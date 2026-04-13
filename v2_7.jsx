@@ -1715,6 +1715,10 @@ export default function App() {
   const [eventEffect, setEventEffect]             = useState(null);
   const nextEventAtRef = useRef(2+Math.floor(Math.random()*2));
 
+  // consent banner — shown once, dismissed to localStorage
+  const [showConsent, setShowConsent] = useState(()=>{ try{ return !localStorage.getItem("jd_consent_given"); }catch{ return true; } });
+  function handleConsentAccept() { try{ localStorage.setItem("jd_consent_given","1"); }catch{} setShowConsent(false); }
+
   // v2.7 insolvency
   const [showInsolvency, setShowInsolvency]       = useState(false);
   const insolvencyHandledRef                      = useRef(false);
@@ -1841,6 +1845,25 @@ export default function App() {
     <JusErrorBoundary>
       <style>{GLOBAL_CSS}</style>
       <div style={{minHeight:"100vh",background:"#060a10",color:"#e2e8f0"}}>
+
+        {/* Consent / info banner — shown once */}
+        {showConsent && (
+          <div style={{position:"fixed",inset:0,background:"rgba(6,10,16,.92)",backdropFilter:"blur(6px)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+            <div style={{background:"#0d1421",border:"1px solid rgba(0,212,170,.25)",borderRadius:20,padding:"40px 36px",maxWidth:480,width:"100%",textAlign:"center",boxShadow:"0 24px 64px rgba(0,0,0,.6)"}}>
+              <div style={{fontSize:44,marginBottom:16}}>⚖️</div>
+              <h2 style={{color:"#e2e8f0",fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:22,marginBottom:14,lineHeight:1.3}}>
+                JusDigitalis Smart Contract Sandbox
+              </h2>
+              <p style={{color:"#a0aec0",fontSize:14,lineHeight:1.7,marginBottom:28}}>
+                Bu simülasyon eğitim amaçlıdır. Tüm veriler anonimdir — kişisel bilgi toplanmaz.
+              </p>
+              <button onClick={handleConsentAccept} style={{width:"100%",padding:"14px 0",border:"none",borderRadius:12,background:"linear-gradient(135deg,#00d4aa,#0099ff)",color:"#060a10",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",letterSpacing:.4}}>
+                Simülasyonu Başlat →
+              </button>
+              <p style={{color:"#4a5568",fontSize:11,marginTop:20}}>© JusDigitalis — Hukuk Mühendisliği</p>
+            </div>
+          </div>
+        )}
 
         {/* v2.7: Insolvency modal */}
         {showInsolvency && (
