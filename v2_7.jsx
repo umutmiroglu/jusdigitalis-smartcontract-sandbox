@@ -918,7 +918,7 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
       setDone(true);
       return;
     }
-    // v2.7: 10000ms per year; v3b: complexity events
+    // v2.7: 5000ms per year; v3b: complexity events
     const timer = setTimeout(()=>{
       const evIdx = Math.min(currentYear, baseYearEvents.length-1);
       const ev = baseYearEvents[evIdx] || {year:currentYear+1, events:YEAR_EVENT_POOL[3].events, winProb:YEAR_EVENT_POOL[3].winProb};
@@ -941,7 +941,7 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
 
       setLog(l=>[...l, {year:currentYear+1, courtText, judgeText, winProb:ev.winProb, complexityEvent}]);
       setCurrentYear(y=>y+1);
-    }, 10000);
+    }, 5000);
     return ()=>clearTimeout(timer);
   },[currentYear]);
 
