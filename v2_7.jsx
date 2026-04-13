@@ -888,6 +888,9 @@ const COMPLEXITY_EVENTS = {
   doc_missing:   { prob:0.10, label:"📁 Kritik belge eksik — noter tasdiki istendi.",            addYears:0, color:"#f39c12" },
 };
 
+const LAWYER_INFLATION_RATE = 0.09; // Türkiye Barolar Birliği asgari ücret artışı
+const COURT_INFLATION_RATE  = 0.09; // yıllık mahkeme harcı artışı
+
 function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
   // v3a: randomize lawsuit duration within bot's min/max range
   const yearsRange = isArb ? ARBITRATION_YEARS_BY_BOT[bot.id] : LAWSUIT_YEARS_BY_BOT[bot.id];
@@ -896,12 +899,20 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
   const maxYearsRef = useRef(maxYears); // sync ref for use inside setTimeout
   useEffect(()=>{ maxYearsRef.current = maxYears; },[maxYears]);
 
+  // inflation helpers — y: number of elapsed inflation cycles (0 = no inflation yet)
+  const initialLawyerFee = lawyer.fee;
+  const initialCourtFee  = isArb ? computeArbitrationFee(bot.basePrice) : computeCourtFee(bot.basePrice);
+  const lawyerFeeAt = y => Math.round(initialLawyerFee * Math.pow(1 + LAWYER_INFLATION_RATE, y));
+  const courtFeeAt  = y => Math.round(initialCourtFee  * Math.pow(1 + COURT_INFLATION_RATE,  y));
+
   const baseYearEvents = useMemo(()=>buildYearEvents(maxYears, isArb),[]);
   const [currentYear, setCurrentYear] = useState(0);
   const [log, setLog] = useState([]);
   const [done, setDone] = useState(false);
   const [finalWon, setFinalWon] = useState(false);
   const [konkordato, setKonkordato] = useState(false);
+  const [totalInflationCost, setTotalInflationCost] = useState(0);
+  const inflCostRef = useRef(0); // mutable ref for closure inside setTimeout
   const logEndRef = useRef(null);
 
   useEffect(()=>{ logEndRef.current?.scrollIntoView({behavior:"smooth"}); },[log]);
@@ -939,7 +950,20 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
         complexityEvent = COMPLEXITY_EVENTS.doc_missing;
       }
 
-      setLog(l=>[...l, {year:currentYear+1, courtText, judgeText, winProb:ev.winProb, complexityEvent}]);
+      // inflation event — fees increase every year after the first
+      let inflationEvent = null;
+      if (currentYear >= 1) {
+        const oldLawyer = lawyerFeeAt(currentYear - 1);
+        const newLawyer = lawyerFeeAt(currentYear);
+        const oldCourt  = courtFeeAt(currentYear - 1);
+        const newCourt  = courtFeeAt(currentYear);
+        const delta = (newLawyer - oldLawyer) + (newCourt - oldCourt);
+        inflCostRef.current += delta;
+        setTotalInflationCost(inflCostRef.current);
+        inflationEvent = { year: currentYear+1, oldLawyer, newLawyer, oldCourt, newCourt, delta };
+      }
+
+      setLog(l=>[...l, {year:currentYear+1, courtText, judgeText, winProb:ev.winProb, complexityEvent, inflationEvent}]);
       setCurrentYear(y=>y+1);
     }, 5000);
     return ()=>clearTimeout(timer);
@@ -959,10 +983,16 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
             "{finalWon?"Deliller yeterli bulundu. Karar müvekkil lehine.":"Yetersiz ispat. Karar karşı taraf lehine."}"
           </span>
         </div>
-        <p style={{color:"#718096",fontSize:13,marginBottom:24}}>
+        <p style={{color:"#718096",fontSize:13,marginBottom:8}}>
           {maxYears} yıl sonra paranın değeri: <strong style={{color:"#f39c12"}}>%{Math.round((INFLATION_BY_YEAR[Math.min(maxYears,10)]||0.2)*100)}</strong>
         </p>
-        <button onClick={()=>onComplete({won:finalWon,konkordato,totalYears:maxYears,isArb})} style={{padding:"12px 32px",background:finalWon?"linear-gradient(135deg,#00d4aa,#0099ff)":"rgba(255,255,255,.1)",border:"none",borderRadius:10,color:finalWon?"#060a10":"#e2e8f0",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer"}}>
+        {totalInflationCost>0&&(
+          <div style={{background:"rgba(255,107,53,.08)",border:"1px solid rgba(255,107,53,.25)",borderRadius:10,padding:"8px 16px",marginBottom:16,fontSize:13,color:"#f6ad55",display:"inline-block"}}>
+            📈 Süreçte artan ücretler (enflasyon): <strong style={{color:"#ff6b35"}}>+{totalInflationCost} JC</strong>
+          </div>
+        )}
+        <div style={{marginBottom:16}}/>
+        <button onClick={()=>onComplete({won:finalWon,konkordato,totalYears:maxYears,isArb,totalInflationCost:inflCostRef.current})} style={{padding:"12px 32px",background:finalWon?"linear-gradient(135deg,#00d4aa,#0099ff)":"rgba(255,255,255,.1)",border:"none",borderRadius:10,color:finalWon?"#060a10":"#e2e8f0",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer"}}>
           Sonucu Gör →
         </button>
       </div>
@@ -1002,6 +1032,13 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
               <div style={{background:"rgba(255,68,68,.06)",borderLeft:`3px solid ${entry.complexityEvent.color}`,borderRight:"1px solid rgba(255,255,255,.06)",borderBottom:"1px solid rgba(255,255,255,.06)",padding:"7px 14px",display:"flex",gap:8,alignItems:"center",animation:"judgeIn .3s ease-out"}}>
                 <span style={{color:entry.complexityEvent.color,fontSize:12,fontWeight:700}}>{entry.complexityEvent.label}</span>
                 {entry.complexityEvent.addYears>0 && <span style={{fontSize:10,background:"rgba(255,68,68,.15)",color:"#fc8181",borderRadius:4,padding:"1px 6px"}}>+{entry.complexityEvent.addYears} yıl</span>}
+              </div>
+            )}
+            {/* Inflation event row */}
+            {entry.inflationEvent && (
+              <div style={{background:"rgba(255,107,53,.06)",borderLeft:"3px solid #ff6b35",borderRight:"1px solid rgba(255,255,255,.06)",borderBottom:"1px solid rgba(255,255,255,.06)",padding:"7px 14px",display:"flex",gap:8,alignItems:"center",animation:"judgeIn .3s ease-out"}}>
+                <span style={{color:"#ff6b35",fontSize:12,fontWeight:700}}>📈 {entry.inflationEvent.year}. yıl: Avukat ücreti {entry.inflationEvent.oldLawyer}→{entry.inflationEvent.newLawyer} JC</span>
+                <span style={{fontSize:10,background:"rgba(255,107,53,.15)",color:"#f6ad55",borderRadius:4,padding:"1px 6px",flexShrink:0}}>+{entry.inflationEvent.delta} JC</span>
               </div>
             )}
             {/* Judge speech bubble */}
@@ -1483,7 +1520,7 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
     setPhase("classic_tunnel");
   }
 
-  function handleTunnelComplete({won,konkordato:konk,totalYears,isArb}) {
+  function handleTunnelComplete({won,konkordato:konk,totalYears,isArb,totalInflationCost:inflCost=0}) {
     setKonkordato(konk);
     const courtFee=isArb?computeArbitrationFee(selectedBot.basePrice):computeCourtFee(selectedBot.basePrice);
     const lawyerFee=selectedLawyer?.fee||0;
@@ -1494,7 +1531,7 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
       setTrustScores(s=>applyTrustUpdate(s,selectedBot.id,isArb?"arbitration_win":"classic_success"));
       setLegalRisk(r=>Math.max(0,r-5));
       setStats(s=>({...s,wins:s.wins+1}));
-      setOutcome({success:true,reward:recovered,profit:recovered-courtFee-lawyerFee,method:"classic",yearsSpent:totalYears,refunded:0,dialogue:pickRandom(selectedBot.dialogues.success)});
+      setOutcome({success:true,reward:recovered,profit:recovered-courtFee-lawyerFee,method:"classic",yearsSpent:totalYears,refunded:0,inflationCost:inflCost,dialogue:pickRandom(selectedBot.dialogues.success)});
       triggerWinAnim();
       logSimulation({type:"round_complete",method:isArb?"arbitration":"classic",won:true,botId:selectedBot.id,cost:courtFee+lawyerFee,reward:recovered,profit:recovered-courtFee-lawyerFee,yearsSpent:totalYears,isArb});
       if(typeof gtag==="function") gtag("event","contract_outcome",{success:true,method:isArb?"arbitration":"classic"});
@@ -1503,7 +1540,7 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
       setLegalRisk(r=>Math.min(100,r+15));
       setDominoBump(d=>Math.min(d+DOMINO_FAILURE_BUMP,0.8));
       setStats(s=>({...s,losses:s.losses+1}));
-      setOutcome({success:false,reward:0,profit:-(courtFee+lawyerFee),method:"classic",yearsSpent:totalYears,refunded:0,konkordato:konk,dialogue:pickRandom(selectedBot.dialogues.fail)});
+      setOutcome({success:false,reward:0,profit:-(courtFee+lawyerFee),method:"classic",yearsSpent:totalYears,refunded:0,inflationCost:inflCost,konkordato:konk,dialogue:pickRandom(selectedBot.dialogues.fail)});
       triggerLossAnim();
       logSimulation({type:"round_complete",method:isArb?"arbitration":"classic",won:false,botId:selectedBot.id,cost:courtFee+lawyerFee,reward:0,profit:-(courtFee+lawyerFee),yearsSpent:totalYears,isArb,konkordato:konk});
       if(typeof gtag==="function") gtag("event","contract_outcome",{success:false,method:isArb?"arbitration":"classic"});
@@ -1681,7 +1718,8 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
           {outcome.konkordato&&<p style={{color:"#fc8181",fontSize:13,marginTop:8}}><LegalTermTooltip termKey="konkordato">Konkordato</LegalTermTooltip>: karşı taraf mahkeme korumasına girdi.</p>}
         </div>
         <LegalReceipt title="KLASİK YÖNTEM MALİYETİ" color="#ff6b35"
-          entries={[{label:"Mahkeme / Tahkim Harcı",value:`${courtFee} JC`,accent:"#ff6b35"},{label:"Avukat Ücreti",value:`${lawyerFee} JC`,accent:"#ff6b35"},{label:"Süre",value:`${outcome.yearsSpent} yıl`},outcome.success?{label:"Tahsil edilen",value:`${outcome.reward} JC`,accent:"#00d4aa",bold:true}:{label:"Tahsil edilen",value:"0 JC",accent:"#ff4444"},{label:"Enflasyon kaybı",value:`-${autopsy?.inflationLoss||0} JC`,accent:"#ff4444"}]}
+          entries={[{label:"Mahkeme / Tahkim Harcı",value:`${courtFee} JC`,accent:"#ff6b35"},{label:"Avukat Ücreti",value:`${lawyerFee} JC`,accent:"#ff6b35"},{label:"Süre",value:`${outcome.yearsSpent} yıl`},outcome.success?{label:"Tahsil edilen",value:`${outcome.reward} JC`,accent:"#00d4aa",bold:true}:{label:"Tahsil edilen",value:"0 JC",accent:"#ff4444"},{label:"Enflasyon kaybı (değer)",value:`-${autopsy?.inflationLoss||0} JC`,accent:"#ff4444"},...(outcome.inflationCost>0?[{label:"📈 Ücret artışı (enflasyon)",value:`+${outcome.inflationCost} JC`,accent:"#f6ad55"}]:[])]
+          }
           total={`${outcome.profit>=0?"+":""}${outcome.profit} JC`}
         />
         <div style={{marginTop:16,padding:14,borderRadius:10,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)"}}>
