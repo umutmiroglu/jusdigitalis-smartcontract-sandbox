@@ -329,9 +329,9 @@ function computeAutopsy(method, bot, totalYears, won) {
   const courtFee = computeCourtFee(bp);
   const inflMult = INFLATION_BY_YEAR[Math.max(1,Math.min(totalYears,10))]||0.18;
   const inflationLoss = Math.floor(bp*(1-inflMult));
-  // v3a: realistic Turkish market opportunity cost — high rate (BIST/TL bond blend) that moderates over time
+  // fixed 18% annual return — realistic Turkish inflation-indexed instrument (TÜFE+ek getiri)
   const yrs = Math.max(totalYears,1);
-  const annualRate = Math.max(TK_OPPORTUNITY_BASE - (yrs-1)*0.025, TK_OPPORTUNITY_FLOOR);
+  const annualRate = 0.18;
   const opportunityCost = Math.floor(bp*(Math.pow(1+annualRate,yrs)-1));
   const konkordatoRisk = Math.round(KONKORDATO_CHANCE*100);
   // v3a: show inflation loss ONLY on win (recovered value eroded); opportunity cost ONLY on loss (capital tied up with no return)
@@ -350,7 +350,7 @@ function computeAutopsy(method, bot, totalYears, won) {
       : totalYears===0 ? `Klasik sözleşme başarıyla tamamlandı — karşı taraf yükümlülüğünü yerine getirdi.`
       : won
         ? `Davayı kazandınız — ancak ${totalYears} yılda paranın değeri %${Math.round((1-inflMult)*100)}'e düştü (enflasyon kaybı: ${inflationLoss} JC).`
-        : `Dava kaybedildi. ${totalYears} yılda ${opportunityCost} JC fırsat maliyeti oluştu (%${Math.round(annualRate*100)} yıllık getiri kaçırıldı).`,
+        : `Dava kaybedildi. ${totalYears} yılda ${opportunityCost} JC fırsat maliyeti oluştu (%18 yıllık enflasyon-endeksli getiri kaçırıldı).`,
   };
 }
 
@@ -1152,6 +1152,107 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
    PART 3 — AUTOPSY, RECEIPT, CONTRACT MODAL
    ═══════════════════════════════════════════════════════════════════════════ */
 
+function InflationReport({bot, lawyer, totalYears, isArb, onContinue}) {
+  const START_DAY = 6;
+  const baseCourtFee  = isArb ? computeArbitrationFee(bot.basePrice) : computeCourtFee(bot.basePrice);
+  const baseLawyerFee = lawyer.fee;
+  const endYear       = LAWSUIT_START_YEAR + totalYears;
+  const ppPct         = Math.round((INFLATION_BY_YEAR[Math.min(totalYears,10)]||0.18)*100);
+  const ppLoss        = 100 - ppPct;
+
+  const rows = Array.from({length: totalYears}, (_,i)=>{
+    const yr     = i+1;
+    const calYr  = LAWSUIT_START_YEAR + i;
+    const court  = Math.round(baseCourtFee  * Math.pow(1+COURT_INFLATION_RATE,  i));
+    const law    = Math.round(baseLawyerFee * Math.pow(1+LAWYER_INFLATION_RATE, i));
+    return {yr, calYr, court, law};
+  });
+
+  const totalCourtExtra  = Math.round(baseCourtFee  * Math.pow(1+COURT_INFLATION_RATE,  totalYears-1)) - baseCourtFee;
+  const totalLawyerExtra = Math.round(baseLawyerFee * Math.pow(1+LAWYER_INFLATION_RATE, totalYears-1)) - baseLawyerFee;
+
+  const cell = (children, opts={}) => (
+    <td style={{padding:"8px 10px",borderBottom:"1px solid rgba(255,255,255,.05)",fontFamily:"'Space Mono',monospace",fontSize:12,color:opts.color||"#a0aec0",textAlign:opts.right?"right":"left",fontWeight:opts.bold?"700":"400",...opts.style}}>
+      {children}
+    </td>
+  );
+
+  return (
+    <div style={{animation:"receiptIn .5s ease-out"}}>
+      <div style={{textAlign:"center",marginBottom:20}}>
+        <div style={{fontSize:40,marginBottom:8}}>📈</div>
+        <h3 style={{color:"#e2e8f0",fontSize:22,marginBottom:4}}>Enflasyon Raporu</h3>
+        <p style={{color:"#718096",fontSize:13}}>Dava süresince artan maliyetler</p>
+      </div>
+
+      {/* Date range */}
+      <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:10,marginBottom:20,flexWrap:"wrap"}}>
+        <div style={{background:"rgba(0,153,255,.08)",border:"1px solid rgba(0,153,255,.2)",borderRadius:10,padding:"8px 16px",fontSize:13,color:"#63b3ed",fontFamily:"'Space Mono',monospace"}}>
+          📅 {START_DAY} {TR_MONTHS[LAWSUIT_START_MONTH]} {LAWSUIT_START_YEAR}
+        </div>
+        <span style={{color:"#4a5568",fontSize:18}}>→</span>
+        <div style={{background:"rgba(255,107,53,.08)",border:"1px solid rgba(255,107,53,.2)",borderRadius:10,padding:"8px 16px",fontSize:13,color:"#f6ad55",fontFamily:"'Space Mono',monospace"}}>
+          📅 {START_DAY} {TR_MONTHS[LAWSUIT_START_MONTH]} {endYear}
+        </div>
+      </div>
+
+      {/* Purchasing power */}
+      <div style={{background:"rgba(255,68,68,.06)",border:"1px solid rgba(255,68,68,.2)",borderRadius:12,padding:"14px 18px",marginBottom:20}}>
+        <div style={{color:"#fc8181",fontWeight:700,fontSize:13,marginBottom:6}}>💸 Satın Alma Gücü Kaybı</div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{flex:1,height:8,background:"rgba(255,255,255,.07)",borderRadius:4,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${ppPct}%`,background:"linear-gradient(90deg,#00d4aa,#0099ff)",borderRadius:4,transition:"width 1s ease"}}/>
+          </div>
+          <span style={{fontFamily:"'Space Mono',monospace",color:"#f6ad55",fontSize:13,whiteSpace:"nowrap",fontWeight:700}}>%{ppPct} kaldı</span>
+        </div>
+        <p style={{color:"#718096",fontSize:12,marginTop:8}}>
+          {totalYears} yıl sonra 100 JC, yalnızca <strong style={{color:"#fc8181"}}>{ppPct} JC</strong> değer taşıyor — <strong style={{color:"#ff4444"}}>%{ppLoss} eridi.</strong>
+        </p>
+      </div>
+
+      {/* Year-by-year fee table */}
+      <div style={{background:"rgba(255,255,255,.02)",border:"1px solid rgba(255,255,255,.07)",borderRadius:12,overflow:"hidden",marginBottom:20}}>
+        <div style={{padding:"10px 14px",borderBottom:"1px solid rgba(255,255,255,.07)",fontSize:11,color:"#718096",fontWeight:700,letterSpacing:1,fontFamily:"'Space Mono',monospace"}}>
+          YIL BAZLI ÜCRET ARTIŞI
+        </div>
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse"}}>
+            <thead>
+              <tr style={{background:"rgba(255,255,255,.03)"}}>
+                {["Yıl","Dönem","Avukat Ücreti","Harç"].map(h=>(
+                  <th key={h} style={{padding:"8px 10px",fontSize:10,color:"#4a5568",textAlign:"left",fontWeight:700,letterSpacing:.5,fontFamily:"'Space Mono',monospace",borderBottom:"1px solid rgba(255,255,255,.07)"}}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(r=>(
+                <tr key={r.yr}>
+                  {cell(`${r.yr}. yıl`,{color:"#f39c12"})}
+                  {cell(`${TR_MONTHS[LAWSUIT_START_MONTH].slice(0,3)} ${r.calYr}–${r.calYr+1}`)}
+                  {cell(`${r.law} JC`,{color: r.yr===1?"#a0aec0":"#f6ad55", bold: r.yr>1})}
+                  {cell(`${r.court} JC`,{color: r.yr===1?"#a0aec0":"#f6ad55", bold: r.yr>1})}
+                </tr>
+              ))}
+              {totalYears>1&&(
+                <tr style={{background:"rgba(255,107,53,.05)"}}>
+                  {cell("Toplam artış",{color:"#ff6b35",bold:true})}
+                  {cell("",{})}
+                  {cell(`+${totalLawyerExtra} JC`,{color:"#ff6b35",bold:true})}
+                  {cell(`+${totalCourtExtra} JC`,{color:"#ff6b35",bold:true})}
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <button onClick={onContinue} style={{width:"100%",padding:"14px 0",border:"none",borderRadius:12,background:"linear-gradient(135deg,#ff6b35,#ff4444)",color:"#fff",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer",letterSpacing:.3}}>
+        Ekonomik Otopsiyi Gör →
+      </button>
+    </div>
+  );
+}
+
 function EconomicAutopsy({autopsy, bot, method, onDone, sessionDurationMs}) {
   const [viewed, setViewed] = useState(false);
   useEffect(()=>{ const t=setTimeout(()=>setViewed(true),2000); return ()=>clearTimeout(t); },[]);
@@ -1815,10 +1916,22 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
           <span style={{fontSize:20}}>{selectedBot.emoji}</span>
           <span style={{color:"#a0aec0",fontSize:13,marginLeft:8,fontStyle:"italic"}}>"{outcome.dialogue}"</span>
         </div>
-        <button onClick={()=>setPhase("autopsy")} style={{width:"100%",marginTop:16,padding:"14px 0",background:"linear-gradient(135deg,#ff6b35,#ff4444)",border:"none",borderRadius:10,color:"#fff",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer"}}>Smart Contract ile Karşılaştır →</button>
+        <button onClick={()=>setPhase(outcome.yearsSpent>0?"inflation_report":"autopsy")} style={{width:"100%",marginTop:16,padding:"14px 0",background:"linear-gradient(135deg,#ff6b35,#ff4444)",border:"none",borderRadius:10,color:"#fff",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:15,cursor:"pointer"}}>Smart Contract ile Karşılaştır →</button>
       </div>
     );
   }
+
+  if (phase==="inflation_report"&&outcome&&selectedBot&&selectedLawyer) return (
+    <div style={cardStyle}>
+      <InflationReport
+        bot={selectedBot}
+        lawyer={selectedLawyer}
+        totalYears={outcome.yearsSpent||1}
+        isArb={legalMode==="arbitration"}
+        onContinue={()=>setPhase("autopsy")}
+      />
+    </div>
+  );
 
   if (phase==="autopsy"&&autopsy&&selectedBot) return (
     <div style={cardStyle}>
