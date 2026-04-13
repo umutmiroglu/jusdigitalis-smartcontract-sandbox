@@ -1399,6 +1399,7 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
   function handleBotSelect(bot) {
     track("BOT_SELECT",{botId:bot.id});
     logSimulation({type:"bot_selected", botId:bot.id, botName:bot.name, trustScore:trustScores[bot.id]||50, coins});
+    if(typeof gtag==="function") gtag("event","bot_selected",{bot_id:bot.id});
     setSelectedBot(bot); setPhase("choose_method");
   }
 
@@ -1406,6 +1407,7 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
     if (isMethodLocked&&method==="smart") return;
     track("METHOD_CHOICE",{chosenMethod:method});
     logSimulation({type:"method_chosen", method, botId:selectedBot?.id, coins});
+    if(typeof gtag==="function") gtag("event","method_chosen",{method});
     setChosenMethod(method);
     if (method==="smart") { setPhase("sc_architect"); return; }
     // v3b: roll delivery outcome upfront, then animate the shipping phase
@@ -1454,6 +1456,7 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
         setOutcome({success:true,reward,profit:reward-totalCost,method:"smart",yearsSpent:0,refunded:0,dialogue:pickRandom(selectedBot.dialogues.success)});
         triggerWinAnim();
         logSimulation({type:"round_complete",method:"smart",won:true,botId:selectedBot.id,cost:totalCost,reward,profit:reward-totalCost,yearsSpent:0,useOracle:params.useOracle});
+        if(typeof gtag==="function") gtag("event","contract_outcome",{success:true,method:"smart"});
       } else {
         setCoins(c=>c+actualPrice); queueCoinAnim(+actualPrice);
         setTrustScores(s=>applyTrustUpdate(s,selectedBot.id,"sc_fail"));
@@ -1462,6 +1465,7 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
         setOutcome({success:false,reward:0,profit:-(params.useOracle?ORACLE_FEE:0),method:"smart",yearsSpent:0,refunded:actualPrice,dialogue:pickRandom(selectedBot.dialogues.fail)});
         triggerLossAnim();
         logSimulation({type:"round_complete",method:"smart",won:false,botId:selectedBot.id,cost:totalCost,reward:0,profit:-(params.useOracle?ORACLE_FEE:0),yearsSpent:0,useOracle:params.useOracle});
+        if(typeof gtag==="function") gtag("event","contract_outcome",{success:false,method:"smart"});
       }
       setAutopsy(computeAutopsy("smart",selectedBot,0,success));
       setPhase("sc_result");
@@ -1473,6 +1477,7 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
     const totalFee=fee+lawyer.fee;
     if (coins<totalFee) { alert("Yetersiz bakiye!"); return; }
     setCoins(c=>c-totalFee); queueCoinAnim(-totalFee);
+    if(typeof gtag==="function") gtag("event","lawyer_selected",{lawyer_id:lawyer.id});
     setSelectedLawyer(lawyer); setLegalMode(mode); setHasPlayedClassic(true);
     setStats(s=>({...s,classicUses:s.classicUses+1}));
     setPhase("classic_tunnel");
@@ -1492,6 +1497,7 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
       setOutcome({success:true,reward:recovered,profit:recovered-courtFee-lawyerFee,method:"classic",yearsSpent:totalYears,refunded:0,dialogue:pickRandom(selectedBot.dialogues.success)});
       triggerWinAnim();
       logSimulation({type:"round_complete",method:isArb?"arbitration":"classic",won:true,botId:selectedBot.id,cost:courtFee+lawyerFee,reward:recovered,profit:recovered-courtFee-lawyerFee,yearsSpent:totalYears,isArb});
+      if(typeof gtag==="function") gtag("event","contract_outcome",{success:true,method:isArb?"arbitration":"classic"});
     } else {
       setTrustScores(s=>applyTrustUpdate(s,selectedBot.id,"lawsuit"));
       setLegalRisk(r=>Math.min(100,r+15));
@@ -1500,6 +1506,7 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
       setOutcome({success:false,reward:0,profit:-(courtFee+lawyerFee),method:"classic",yearsSpent:totalYears,refunded:0,konkordato:konk,dialogue:pickRandom(selectedBot.dialogues.fail)});
       triggerLossAnim();
       logSimulation({type:"round_complete",method:isArb?"arbitration":"classic",won:false,botId:selectedBot.id,cost:courtFee+lawyerFee,reward:0,profit:-(courtFee+lawyerFee),yearsSpent:totalYears,isArb,konkordato:konk});
+      if(typeof gtag==="function") gtag("event","contract_outcome",{success:false,method:isArb?"arbitration":"classic"});
     }
     setAutopsy(computeAutopsy("classic",selectedBot,totalYears,won));
     setPhase("classic_result");
