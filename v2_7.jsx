@@ -318,6 +318,11 @@ function computeClassicDirectRate(bot, crashActive, eventEffect=null) {
 
 function computeCourtFee(p){ return Math.round(p*COURT_FEE_RATE); }
 function computeArbitrationFee(p){ return Math.round(p*ARBITRATION_FEE_RATE); }
+// price inflated to a given simulation year (base year = LAWSUIT_START_YEAR = 2021)
+function priceAtSimYear(base, simYear, rate=0.09) {
+  const years = Math.max(0, simYear - LAWSUIT_START_YEAR);
+  return Math.round(base * Math.pow(1 + rate, years));
+}
 
 function computeAutopsy(method, bot, totalYears, won) {
   const bp = bot.basePrice;
@@ -788,9 +793,12 @@ function DeliveryShipping({bot, deliveryTimeMult=1, onDelivered, onFailed, willS
 }
 
 // ─── BOT CARD ─────────────────────────────────────────────────────────────────
-const BotCard = memo(function BotCard({bot, trustScore, selected, onSelect, disabled}) {
+const BotCard = memo(function BotCard({bot, trustScore, selected, onSelect, disabled, simYear=LAWSUIT_START_YEAR}) {
   const badge = getReputationBadge(trustScore);
   const discount = Math.floor((trustScore/MAX_TRUST_SCORE)*TRUST_DISCOUNT_MAX);
+  const inflYears   = Math.max(0, simYear - LAWSUIT_START_YEAR);
+  const dispPrice   = inflYears > 0 ? priceAtSimYear(bot.basePrice,  simYear, 0.09) : bot.basePrice;
+  const dispReward  = inflYears > 0 ? priceAtSimYear(bot.baseReward, simYear, 0.09) : bot.baseReward;
   return (
     <div onClick={()=>!disabled&&onSelect(bot)} style={{
       border:`2px solid ${selected?"rgba("+bot.colorRgb+",.8)":"rgba("+bot.colorRgb+",.2)"}`,
@@ -820,8 +828,15 @@ const BotCard = memo(function BotCard({bot, trustScore, selected, onSelect, disa
       <p style={{color:"#718096",fontSize:12,lineHeight:1.6,marginBottom:12}}>{bot.description}</p>
       <div style={{fontFamily:"'Space Mono',monospace",color:`rgba(${bot.colorRgb},.7)`,fontSize:11,fontStyle:"italic"}}>"{bot.catchphrase}"</div>
       <div style={{display:"flex",gap:16,marginTop:12,paddingTop:12,borderTop:"1px solid rgba(255,255,255,.06)"}}>
-        <div style={{textAlign:"center"}}><div style={{color:"#e2e8f0",fontWeight:700,fontFamily:"'Space Mono',monospace"}}>{bot.basePrice} JC</div><div style={{color:"#4a5568",fontSize:10}}>Ödeme</div></div>
-        <div style={{textAlign:"center"}}><div style={{color:"#00d4aa",fontWeight:700,fontFamily:"'Space Mono',monospace"}}>{bot.baseReward} JC</div><div style={{color:"#4a5568",fontSize:10}}>Beklenen</div></div>
+        <div style={{textAlign:"center"}}>
+          <div style={{color:"#e2e8f0",fontWeight:700,fontFamily:"'Space Mono',monospace"}}>{dispPrice} JC</div>
+          <div style={{color:"#4a5568",fontSize:10}}>Ödeme</div>
+          {inflYears>0&&<div style={{color:"#f6ad55",fontSize:9,marginTop:2}}>📈 {simYear} fiyatı</div>}
+        </div>
+        <div style={{textAlign:"center"}}>
+          <div style={{color:"#00d4aa",fontWeight:700,fontFamily:"'Space Mono',monospace"}}>{dispReward} JC</div>
+          <div style={{color:"#4a5568",fontSize:10}}>Beklenen</div>
+        </div>
         <div style={{textAlign:"center"}}><div style={{color:bot.baseSuccessRate>0.6?"#00d4aa":bot.baseSuccessRate>0.4?"#f39c12":"#ff4444",fontWeight:700,fontFamily:"'Space Mono',monospace"}}>%{Math.round(bot.baseSuccessRate*100)}</div><div style={{color:"#4a5568",fontSize:10}}>Başarı</div></div>
       </div>
     </div>
@@ -829,20 +844,27 @@ const BotCard = memo(function BotCard({bot, trustScore, selected, onSelect, disa
 });
 
 // ─── LAWYER SELECT ────────────────────────────────────────────────────────────
-function LawyerSelect({bot, onSelect}) {
+function LawyerSelect({bot, onSelect, simYear=LAWSUIT_START_YEAR}) {
   const [chosen, setChosen] = useState(null);
   const [mode, setMode] = useState("lawsuit");
   const isArb = mode==="arbitration";
   const yearsRange = isArb ? ARBITRATION_YEARS_BY_BOT[bot.id] : LAWSUIT_YEARS_BY_BOT[bot.id];
   const yearsDisplay = `${yearsRange.min}–${yearsRange.max}`;
-  const baseFee = isArb ? computeArbitrationFee(bot.basePrice) : computeCourtFee(bot.basePrice);
+  const baseFee    = isArb ? computeArbitrationFee(bot.basePrice) : computeCourtFee(bot.basePrice);
+  const inflFee    = priceAtSimYear(baseFee, simYear, COURT_INFLATION_RATE);
+  const inflYears  = Math.max(0, simYear - LAWSUIT_START_YEAR);
+  const lawyerInflFee = l => priceAtSimYear(l.fee, simYear, LAWYER_INFLATION_RATE);
 
   return (
     <div style={{animation:"lawyerPop .4s ease-out"}}>
       <div style={{textAlign:"center",marginBottom:24}}>
         <div style={{fontSize:40,marginBottom:8}}>⚖️</div>
         <h3 style={{color:"#e2e8f0",fontSize:20,marginBottom:4}}>Hukuki Temsil Seçin</h3>
-        <p style={{color:"#718096",fontSize:13}}>Harç: <strong style={{color:"#ff4444"}}>{baseFee} JC</strong> · Süreç: <strong style={{color:"#f39c12"}}>{yearsDisplay} yıl</strong> (rastgele)</p>
+        <p style={{color:"#718096",fontSize:13}}>
+          Harç: <strong style={{color:"#ff4444"}}>{inflFee} JC</strong>
+          {inflYears>0&&<span style={{color:"#f6ad55",fontSize:11}}> (📈 {simYear})</span>}
+          {" · "}Süreç: <strong style={{color:"#f39c12"}}>{yearsDisplay} yıl</strong> (rastgele)
+        </p>
       </div>
       <div style={{display:"flex",gap:8,marginBottom:20,background:"rgba(255,255,255,.03)",borderRadius:12,padding:6}}>
         {["lawsuit","arbitration"].map(m=>(
@@ -861,8 +883,8 @@ function LawyerSelect({bot, onSelect}) {
               <div style={{color:"#a0aec0",fontSize:12,marginTop:4,fontStyle:"italic"}}>"{pickRandom(l.dialogues)}"</div>
             </div>
             <div style={{textAlign:"right"}}>
-              <div style={{color:"#ff6b35",fontFamily:"'Space Mono',monospace",fontWeight:700}}>{l.fee} JC</div>
-              <div style={{color:"#4a5568",fontSize:10}}>Avukat ücreti</div>
+              <div style={{color:"#ff6b35",fontFamily:"'Space Mono',monospace",fontWeight:700}}>{lawyerInflFee(l)} JC</div>
+              <div style={{color:"#4a5568",fontSize:10}}>Avukat ücreti{inflYears>0?` (📈${simYear})`:""}</div>
               <div style={{color:"#00d4aa",fontSize:11,marginTop:4}}>Kazanma: %{Math.round(l.winMultiplier*100)}</div>
             </div>
           </div>
@@ -873,7 +895,7 @@ function LawyerSelect({bot, onSelect}) {
         {yearsDisplay} yıl sonra paranın değeri: <strong>%{Math.round((INFLATION_BY_YEAR[yearsRange.min]||0.5)*100)}–%{Math.round((INFLATION_BY_YEAR[yearsRange.max]||0.2)*100)}</strong>
       </div>
       <button disabled={!chosen} onClick={()=>onSelect(chosen,mode)} style={{width:"100%",padding:"14px 0",border:"none",borderRadius:10,cursor:chosen?"pointer":"not-allowed",background:chosen?"linear-gradient(135deg,#ff6b35,#ff4444)":"rgba(255,255,255,.1)",color:chosen?"#fff":"#4a5568",fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:15,transition:"all .2s"}}>
-        {chosen?`${chosen.name} ile Davayı Başlat — ${baseFee+chosen.fee} JC`:"Avukat Seçin"}
+        {chosen?`${chosen.name} ile Davayı Başlat — ${inflFee+lawyerInflFee(chosen)} JC`:"Avukat Seçin"}
       </button>
     </div>
   );
@@ -1432,7 +1454,7 @@ function SocialProofWidget() {
 }
 
 // ─── FULL SIMULATION ──────────────────────────────────────────────────────────
-function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores, stats, setStats, capitalProtected, setCapitalProtected, legalRisk, setLegalRisk, sessionStart, eventEffect, onRoundComplete}) {
+function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores, stats, setStats, capitalProtected, setCapitalProtected, legalRisk, setLegalRisk, sessionStart, eventEffect, onRoundComplete, simYear=LAWSUIT_START_YEAR, onAdvanceSimDate}) {
   const [phase, setPhase] = useState("select_bot");
   const [selectedBot, setSelectedBot] = useState(null);
   const [chosenMethod, setChosenMethod] = useState(null);
@@ -1611,7 +1633,12 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
     setPhase("classic_result");
   }
 
-  function handleAutopsyDone() { onRoundComplete&&onRoundComplete(); resetGame(); }
+  function handleAutopsyDone() {
+    const monthsToAdvance = outcome?.method==="smart" ? 2 : (outcome?.yearsSpent>0 ? outcome.yearsSpent*12 : 3);
+    onAdvanceSimDate&&onAdvanceSimDate(monthsToAdvance);
+    onRoundComplete&&onRoundComplete();
+    resetGame();
+  }
 
   function resetGame() {
     setPhase("select_bot"); setSelectedBot(null); setChosenMethod(null);
@@ -1635,7 +1662,7 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
         {abVariant==="forceClassicFirst"&&<div style={{marginTop:10,background:"rgba(255,107,53,.08)",border:"1px solid rgba(255,107,53,.2)",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#f6ad55"}}>Önce klasik yöntemi deneyin.</div>}
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:16}}>
-        {BOTS.map(bot=><BotCard key={bot.id} bot={bot} trustScore={trustScores[bot.id]||50} selected={false} onSelect={handleBotSelect} disabled={false}/>)}
+        {BOTS.map(bot=><BotCard key={bot.id} bot={bot} trustScore={trustScores[bot.id]||50} selected={false} onSelect={handleBotSelect} disabled={false} simYear={simYear}/>)}
       </div>
     </div>
   );
@@ -1727,7 +1754,7 @@ function FullSimulation({abVariant, coins, setCoins, trustScores, setTrustScores
       <div style={{background:"rgba(255,107,53,.08)",border:"1px solid rgba(255,107,53,.2)",borderRadius:10,padding:14,marginBottom:20,fontSize:13,color:"#f6ad55"}}>
         <strong>{selectedBot.emoji} {selectedBot.name}:</strong> "{pickRandom(selectedBot.dialogues.fail)}"
       </div>
-      <LawyerSelect bot={selectedBot} onSelect={handleLawyerSelect}/>
+      <LawyerSelect bot={selectedBot} onSelect={handleLawyerSelect} simYear={simYear}/>
     </div>
   );
 
@@ -1815,6 +1842,15 @@ export default function App() {
   const [capitalProtected, setCapitalProtected]   = useState(()=>persisted?.capitalProtected??0);
   const [legalRisk, setLegalRisk]                 = useState(()=>persisted?.legalRisk??0);
   const [sessionCount]                            = useState(()=>{ try{const n=parseInt(localStorage.getItem("jd_session_count")||"0");localStorage.setItem("jd_session_count",String(n+1));return n;}catch{return 0;} });
+
+  // simulation calendar — starts Nov 2021
+  const [simDate, setSimDate] = useState({year:LAWSUIT_START_YEAR, month:LAWSUIT_START_MONTH});
+  function advanceSimDate(months) {
+    setSimDate(d=>{
+      const total = d.year*12 + d.month + months;
+      return {year:Math.floor(total/12), month:total%12};
+    });
+  }
 
   // v2.6 random event system
   const [contractCount, setContractCount]         = useState(0);
@@ -2053,6 +2089,12 @@ export default function App() {
           </div>
           <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
             <SocialProofWidget/>
+            <div style={{display:"flex",alignItems:"center",gap:6,background:"rgba(0,153,255,.08)",border:"1px solid rgba(0,153,255,.2)",borderRadius:12,padding:"8px 14px"}}>
+              <span style={{fontSize:14}}>📅</span>
+              <span style={{fontFamily:"'Space Mono',monospace",color:"#63b3ed",fontWeight:700,fontSize:13,letterSpacing:.5}}>
+                {TR_MONTHS[simDate.month]} {simDate.year}
+              </span>
+            </div>
             <PlayerReputationDisplay score={playerReputation}/>
             <CoinDisplay coins={coins}/>
           </div>
@@ -2100,6 +2142,8 @@ export default function App() {
               sessionStart={sessionStart}
               eventEffect={eventEffect}
               onRoundComplete={handleRoundComplete}
+              simYear={simDate.year}
+              onAdvanceSimDate={advanceSimDate}
             />
           )}
 
