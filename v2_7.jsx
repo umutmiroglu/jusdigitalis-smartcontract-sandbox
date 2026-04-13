@@ -1015,7 +1015,7 @@ function TimeTunnel({bot, lawyer, mode, isArb, onComplete}) {
           </div>
         ))}
 
-        {currentYear<totalYears&&(
+        {currentYear<maxYears&&(
           <div style={{textAlign:"center",padding:"20px 16px",color:"#4a5568",fontSize:12}}>
             <div style={{display:"inline-block",width:16,height:16,border:"2px solid rgba(243,156,18,.5)",borderTopColor:"transparent",borderRadius:"50%",animation:"spin 1.2s linear infinite",marginBottom:8}}/>
             <div>{JUDGE_EMOJI} Duruşma devam ediyor…</div>
