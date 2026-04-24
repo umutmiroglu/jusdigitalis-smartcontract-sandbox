@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Barlow+Condensed:wght@400;600;700;800;900&family=Syne:wght@400;700;800;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Syne',sans-serif;background:#060a10;color:#e2e8f0;}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes fadeUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-40px)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes countUp{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+@keyframes receiptIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bubbleIn{from{opacity:0;transform:scale(.8) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes lawyerPop{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes konkordatoFlash{0%,100%{background:rgba(255,68,68,.0)}50%{background:rgba(255,68,68,.15)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes refundPop{0%{opacity:0;transform:scale(0.6)}60%{transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
+@keyframes eventIn{from{opacity:0;transform:scale(.92) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}85%{opacity:.8}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+@keyframes winFlash{0%,100%{box-shadow:none}25%{box-shadow:0 0 0 3px rgba(0,212,170,.5),0 0 60px rgba(0,212,170,.25)}75%{box-shadow:0 0 0 2px rgba(0,212,170,.3)}}
+@keyframes lossFlash{0%,100%{background:rgba(6,10,16,0)}20%{background:rgba(255,68,68,.18)}60%{background:rgba(255,68,68,.08)}}
+@keyframes judgeIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+@keyframes insolvencyIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+@keyframes loanIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:.4;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,.1);width:100%;cursor:pointer;padding:20px 0;margin:-20px 0;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#00d4aa;cursor:pointer;box-shadow:0 0 8px rgba(0,212,170,.5);}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(0,212,170,.3);border-radius:2px;}
+.tooltip-wrap{position:relative;display:inline-flex;align-items:center;cursor:help;}
+.tooltip-wrap .tooltip-box{display:none;position:absolute;bottom:calc(100%+6px);left:50%;transform:translateX(-50%);background:#0d1b2a;border:1px solid rgba(0,212,170,.3);color:#cce;font-size:11px;line-height:1.6;padding:8px 12px;border-radius:8px;width:240px;z-index:999;pointer-events:none;}
+.tooltip-wrap:hover .tooltip-box{display:block;animation:bubbleIn .2s ease-out;}
+
+/* ── Mobile responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .bot-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .bot-grid { grid-template-columns: 1fr; }
+  .modal-content { max-height: 90dvh; overflow-y: auto; border-radius: 12px 12px 0 0; position: fixed; bottom: 0; left: 0; right: 0; }
+}
+
+/* ── Accessibility ──────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
