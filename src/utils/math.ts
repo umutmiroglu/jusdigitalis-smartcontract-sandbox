@@ -2,6 +2,7 @@ import type { Bot, ContractParams, ContractMethod, EventEffect, YearEvent, Autop
 import {
   COURT_FEE_RATE, ARBITRATION_FEE_RATE, MARKET_VARIANCE,
   INFLATION_BY_YEAR, KONKORDATO_CHANCE, MARKET_CRASH_PENALTY,
+  LAWSUIT_START_YEAR,
 } from '../constants/game'
 import { YEAR_EVENT_POOL, ARB_EVENT_POOL } from '../constants/events'
 import { JUDGE_BY_YEAR, JUDGE_INCONCLUSIVE, JUDGE_WEAK, JUDGE_STRONG } from '../constants/judge'
@@ -52,6 +53,11 @@ export function computeSuccessRate(
   if (eventEffect?.successBonus)   rate = Math.min(rate + eventEffect.successBonus, 0.97)
   if (eventEffect?.scSuccessBonus) rate = Math.min(rate + eventEffect.scSuccessBonus * 0.6, 0.97)
   return rate
+}
+
+export function priceAtSimYear(base: number, simYear: number, rate = 0.09): number {
+  const years = Math.max(0, simYear - LAWSUIT_START_YEAR)
+  return Math.round(base * Math.pow(1 + rate, years))
 }
 
 export function computeClassicDirectRate(
