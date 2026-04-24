@@ -1,0 +1,40 @@
+import type { Lawyer } from '../types'
+
+export const LAWYERS = [
+  {
+    id: 'rookie' as const,
+    name: 'Stajyer Avukat',
+    title: 'Az Tecrübeli · Az Ücretli',
+    emoji: '👨‍🎓',
+    color: '#a0aec0',
+    fee: 30,
+    winMultiplier: 0.28,
+    recoveryRate: 0.35,
+    description: 'Yeni mezun, hevesli ama deneyimsiz.',
+    dialogues: ['Bu davayı kazanabilirim!', 'Şimdi şöyle bir strateji düşündüm…', 'Daha önce böyle bir dava görmedim ama araştırırım!'],
+  },
+  {
+    id: 'mid' as const,
+    name: 'Genç Ortak',
+    title: 'Orta Tecrübe · Orta Ücret',
+    emoji: '👩‍💼',
+    color: '#f39c12',
+    fee: 70,
+    winMultiplier: 0.52,
+    recoveryRate: 0.55,
+    description: '3–5 yıllık deneyim.',
+    dialogues: ['Yargıtay içtihatlarına göre tam olarak bu durumu kapsıyor!', 'Müvekkilim haklı!', 'Bu davayı %80 kazanırız. Ya da %60.'],
+  },
+  {
+    id: 'veteran' as const,
+    name: 'Kurt Avukat',
+    title: 'Tecrübeli · Pahalı · Az Konuşur',
+    emoji: '⚖️',
+    color: '#9b59b6',
+    fee: 140,
+    winMultiplier: 0.78,
+    recoveryRate: 0.72,
+    description: '25 yıllık deneyim.',
+    dialogues: ['Tamam.', 'Dosyayı inceledim. Kazanırız.', 'Karşı taraf zayıf.', 'Güvenin bana.'],
+  },
+] satisfies Lawyer[]
