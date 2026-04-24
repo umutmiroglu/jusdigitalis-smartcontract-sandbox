@@ -16,7 +16,7 @@ describe('types', () => {
     expectTypeOf<AutopsyResult['method']>().toEqualTypeOf<'smart' | 'classic' | 'arbitration'>()
   })
   it('GameStats has numeric fields', () => {
-    expectTypeOf<GameStats['totalContracts']>().toBeNumber()
+    expectTypeOf<GameStats['wins']>().toEqualTypeOf<number>()
   })
   it('Lawyer id is a known value', () => {
     expectTypeOf<Lawyer['id']>().toEqualTypeOf<'rookie' | 'mid' | 'veteran'>()

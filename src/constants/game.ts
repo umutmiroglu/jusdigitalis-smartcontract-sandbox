@@ -15,6 +15,7 @@ export const LS_KEY               = 'jus_digitalis_v27'
 export const BANKRUPTCY_THRESHOLD = 100
 export const LOAN_TRIGGER_EVERY   = 5
 export const LAWSUIT_START_YEAR   = 2021
+export const LAWSUIT_START_MONTH  = 10  // Kasım (0-indexed)
 
 export const INFLATION_BY_YEAR: Record<number, number> = {
   1: 0.82, 2: 0.68, 3: 0.52, 4: 0.44, 5: 0.38,

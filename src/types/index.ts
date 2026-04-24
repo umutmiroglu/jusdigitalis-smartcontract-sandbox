@@ -156,11 +156,11 @@ export interface ReputationBadge {
 
 // ─── Game State ───────────────────────────────────────────────────────────────
 export interface GameStats {
-  totalContracts: number
-  successfulContracts: number
-  smartContractsUsed: number
-  totalEarned: number
-  totalLost: number
+  wins: number
+  losses: number
+  scUses: number
+  classicUses: number
+  concordatos: number
 }
 
 export interface PersistedState {
