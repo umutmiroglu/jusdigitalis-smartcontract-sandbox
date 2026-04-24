@@ -7,12 +7,16 @@ import { track } from '../utils/analytics'
 
 type GamePhase =
   | 'select_bot'
-  | 'contract_builder'
-  | 'executing_smart'
-  | 'classic_delivery'
-  | 'lawyer_select'
-  | 'time_tunnel'
-  | 'result'
+  | 'choose_method'
+  | 'sc_architect'
+  | 'sc_executing'
+  | 'sc_result'
+  | 'classic_shipping'
+  | 'classic_delivery_confirm'
+  | 'classic_lawyer'
+  | 'classic_tunnel'
+  | 'classic_result'
+  | 'inflation_report'
   | 'autopsy'
 
 type LegalMode = 'lawsuit' | 'arbitration'
@@ -53,7 +57,7 @@ export interface GameState {
   // Modals
   showInsolvency: boolean
   pendingLoanRequest: Bot | null
-  loanState: 'lending' | 'defaulted' | null
+  loanState: 'lending' | 'repaid' | 'defaulted' | null
   activeLoan: { bot: Bot; amount: number; interest: number } | null
   showMiniLawsuit: boolean
   showConsent: boolean
@@ -184,7 +188,7 @@ export function useGameState(): GameState & GameActions {
   }, [])
 
   const resetGameSession = useCallback(() => {
-    setPhase('select_bot')
+    setPhase('select_bot' as GamePhase)
     setSelectedBot(null)
     setChosenMethod(null)
     setContractId(null)

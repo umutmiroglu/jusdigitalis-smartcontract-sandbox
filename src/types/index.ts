@@ -18,6 +18,12 @@ export type AnalyticsEventName =
   | 'SIM_DATA'
   | 'QUICK_DEMO_START'
   | 'QUICK_DEMO_COMPLETE'
+  | 'INSOLVENCY'
+  | 'CONCORDATO'
+  | 'BANKRUPTCY'
+  | 'RANDOM_EVENT'
+  | 'LOAN_GIVEN'
+  | 'LOAN_REFUSED'
 
 // ─── Bot ─────────────────────────────────────────────────────────────────────
 export interface BotDialogues {
