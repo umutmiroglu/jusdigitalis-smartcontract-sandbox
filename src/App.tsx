@@ -28,6 +28,7 @@ import { applyTrustUpdate, computePlayerReputation, getReputationBadge } from '.
 import { track, logSimulation, getABVariant } from './utils/analytics'
 import type { Bot, Lawyer, ContractParams } from './types'
 import { botEvaluateContract } from './utils/trust'
+import { useCoinAnimation } from './hooks/useCoinAnimation'
 
 // ─── ERROR BOUNDARY ───────────────────────────────────────────────────────────
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -102,18 +103,7 @@ function FullSimulation({
   const [execProgress, setExecProgress] = useState(0)
   const execRafRef = useRef<number | null>(null)
 
-  const animQueueRef = useRef<number[]>([])
-  const animRunningRef = useRef(false)
-  const [coinAnim, setCoinAnim] = useState<{ amount: number; id: number } | null>(null)
-
-  function queueCoinAnim(amount: number) { animQueueRef.current.push(amount); drainAnimQueue() }
-  function drainAnimQueue() {
-    if (animRunningRef.current || animQueueRef.current.length === 0) return
-    animRunningRef.current = true
-    const amount = animQueueRef.current.shift()!
-    setCoinAnim({ amount, id: Date.now() })
-    setTimeout(() => { setCoinAnim(null); animRunningRef.current = false; drainAnimQueue() }, 700)
-  }
+  const { isAnimating: coinAnimating, currentDelta: coinDelta, queueAnimation: queueCoinAnim } = useCoinAnimation()
 
   function triggerWinAnim()  { setShowConfetti(true) }
   function triggerLossAnim() { setShowLossFlash(true); setTimeout(() => setShowLossFlash(false), 1200) }
@@ -253,7 +243,7 @@ function FullSimulation({
   function resetSim() {
     setPhase('select_bot'); setSelectedBot(null); setScExecData(null); setContractId(null)
     setOutcome(null); setAutopsy(null); setKonkordato(false); setSelectedLawyer(null)
-    setLegalMode('lawsuit'); setCoinAnim(null); setShowConfetti(false); setShowLossFlash(false)
+    setLegalMode('lawsuit'); setShowConfetti(false); setShowLossFlash(false)
     setPendingDeliverySuccess(false); setExecProgress(0)
   }
 
@@ -261,7 +251,11 @@ function FullSimulation({
 
   if (phase === 'select_bot') return (
     <div style={cardStyle}>
-      {coinAnim && <div key={coinAnim.id} style={{ position: 'fixed', top: 80, right: 32, color: coinAnim.amount > 0 ? '#00d4aa' : '#ff4444', fontFamily: "'Space Mono',monospace", fontWeight: 700, fontSize: 20, animation: 'fadeUp .7s ease-out forwards', pointerEvents: 'none', zIndex: 500 }}>{coinAnim.amount > 0 ? '+' : ''}{coinAnim.amount} JC</div>}
+      {coinAnimating && (
+        <div style={{ position: 'fixed', top: 80, right: 32, color: coinDelta > 0 ? '#00d4aa' : '#ff4444', fontFamily: "'Space Mono',monospace", fontWeight: 700, fontSize: 20, animation: 'fadeUp .7s ease-out forwards', pointerEvents: 'none', zIndex: 500 }}>
+          {coinDelta > 0 ? '+' : ''}{coinDelta} JC
+        </div>
+      )}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
         <h2 style={{ color: '#e2e8f0', fontSize: 22, marginBottom: 8 }}>Karşı Tarafı Seçin</h2>
         <p style={{ color: '#718096', fontSize: 13 }}>Kim ile anlaşma yapacaksınız?</p>
