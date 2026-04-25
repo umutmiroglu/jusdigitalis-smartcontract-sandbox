@@ -57,6 +57,7 @@ export function TimeTunnel({ bot, lawyer, isArb, onComplete }: TimeTunnelProps) 
   const [konkordato, setKonkordato] = useState(false)
   const [totalInflationCost, setTotalInflationCost] = useState(0)
   const inflCostRef = useRef(0)
+  const skipRef = useRef<(() => void) | null>(null)
 
   const [msElapsed, setMsElapsed] = useState(0)
   const msElapsedRef = useRef(0)
@@ -81,6 +82,7 @@ export function TimeTunnel({ bot, lawyer, isArb, onComplete }: TimeTunnelProps) 
   useEffect(() => { logEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [log])
 
   useEffect(() => {
+    if (done) return
     if (currentYear >= maxYearsRef.current) {
       const lastIdx = Math.min(currentYear - 1, baseYearEvents.length - 1)
       const lastWinProb = baseYearEvents[lastIdx]?.winProb || 0.5
@@ -92,7 +94,8 @@ export function TimeTunnel({ bot, lawyer, isArb, onComplete }: TimeTunnelProps) 
       setDone(true)
       return
     }
-    const timer = setTimeout(() => {
+
+    const doAdvance = () => {
       const evIdx = Math.min(currentYear, baseYearEvents.length - 1)
       const ev = baseYearEvents[evIdx] || { year: currentYear + 1, events: ['Dava devam ediyor...'], winProb: 0.5 }
       const courtText = pickRandom(ev.events)
@@ -127,9 +130,13 @@ export function TimeTunnel({ bot, lawyer, isArb, onComplete }: TimeTunnelProps) 
 
       setLog(l => [...l, { year: currentYear + 1, courtText, judgeText, winProb: ev.winProb, complexityEvent, inflationEvent }])
       setCurrentYear(y => y + 1)
-    }, 5000)
-    return () => clearTimeout(timer)
-  }, [currentYear])
+      skipRef.current = null
+    }
+
+    skipRef.current = doAdvance
+    const timer = setTimeout(doAdvance, MS_PER_TUNNEL_YEAR)
+    return () => { clearTimeout(timer); skipRef.current = null }
+  }, [currentYear, done])
 
   if (done) {
     return (
@@ -188,6 +195,21 @@ export function TimeTunnel({ bot, lawyer, isArb, onComplete }: TimeTunnelProps) 
         <div style={{ height: 4, background: 'rgba(255,255,255,.08)', borderRadius: 2, overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${(currentYear / Math.max(maxYears, 1)) * 100}%`, background: 'linear-gradient(90deg,#ff6b35,#ff4444)', transition: 'width 1.6s ease', borderRadius: 2 }} />
         </div>
+        {!done && currentYear < maxYears && (
+          <button
+            onClick={() => { if (skipRef.current) { skipRef.current() } }}
+            style={{
+              marginTop: 8, padding: '6px 16px',
+              background: 'rgba(255,255,255,.04)',
+              border: '1px solid rgba(255,255,255,.1)',
+              borderRadius: 8, color: '#4a5568',
+              fontFamily: "'Syne',sans-serif", fontSize: 12,
+              cursor: 'pointer',
+            }}
+          >
+            Hızlandır ⏩
+          </button>
+        )}
       </div>
 
       <div style={{ maxHeight: 340, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
