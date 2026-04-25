@@ -29,6 +29,7 @@ import { track, logSimulation, getABVariant } from './utils/analytics'
 import type { Bot, Lawyer, ContractParams } from './types'
 import { botEvaluateContract } from './utils/trust'
 import { useCoinAnimation } from './hooks/useCoinAnimation'
+import { useIsMobile } from './hooks/useIsMobile'
 
 // ─── ERROR BOUNDARY ───────────────────────────────────────────────────────────
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -103,6 +104,7 @@ function FullSimulation({
   const [execProgress, setExecProgress] = useState(0)
   const execRafRef = useRef<number | null>(null)
 
+  const isMobile = useIsMobile()
   const { isAnimating: coinAnimating, currentDelta: coinDelta, queueAnimation: queueCoinAnim } = useCoinAnimation()
 
   function triggerWinAnim()  { setShowConfetti(true) }
@@ -278,7 +280,7 @@ function FullSimulation({
           <div style={{ color: '#a0aec0', fontSize: 12, marginBottom: 4, fontFamily: "'Space Mono',monospace" }}>{selectedBot.contractType} · {selectedBot.contractRef}</div>
           <div style={{ color: '#718096', fontSize: 13, fontStyle: 'italic' }}>"{pickRandom(selectedBot.dialogues.greet)}"</div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
           <button onClick={() => handleMethodChoice('classic')} style={{ padding: '20px 16px', border: '2px solid rgba(255,107,53,.3)', borderRadius: 14, cursor: 'pointer', background: 'rgba(255,107,53,.06)', color: '#e2e8f0', fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 15, transition: 'all .2s' }}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>⚖️</div>
             <div>Klasik Sözleşme</div>

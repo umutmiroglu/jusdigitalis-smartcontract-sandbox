@@ -1,10 +1,25 @@
 import { useMemo, useEffect } from 'react'
 
+const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
 interface ConfettiOverlayProps {
   onDone: () => void
 }
 
 export function ConfettiOverlay({ onDone }: ConfettiOverlayProps) {
+  if (prefersReduced) {
+    setTimeout(onDone, 100)
+    return (
+      <div style={{
+        position: 'fixed', top: 80, left: '50%', transform: 'translateX(-50%)',
+        color: '#00d4aa', fontWeight: 700, fontSize: 18, zIndex: 1000,
+        animation: 'none', pointerEvents: 'none',
+      }}>
+        ✓ Tebrikler!
+      </div>
+    )
+  }
+
   const pieces = useMemo(() =>
     Array.from({ length: 52 }, (_, i) => ({
       id: i,

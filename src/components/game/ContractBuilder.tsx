@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useIsMobile } from '../../hooks/useIsMobile'
 import type { Bot, ContractParams, EventEffect, LegalTerm } from '../../types'
 import { ORACLE_FEE, MAX_TRUST_SCORE, TRUST_DISCOUNT_MAX } from '../../constants/game'
 import { computeSuccessRate, priceAtSimYear } from '../../utils/math'
@@ -19,6 +20,7 @@ interface ContractBuilderProps {
 }
 
 export function ContractBuilder({ bot, trustScore, dominoBump, crashActive, eventEffect, legalTerms, simYear, onExecute, onBack }: ContractBuilderProps) {
+  const isMobile = useIsMobile()
   const [params, setParams] = useState<ContractParams>({ timeout: 15, penaltyRate: 20, useOracle: false })
   const [effectivePenaltyRate, setEffectivePenaltyRate] = useState(20)
   const [evalResult, setEvalResult] = useState<ReturnType<typeof botEvaluateContract> | null>(null)
@@ -70,7 +72,9 @@ export function ContractBuilder({ bot, trustScore, dominoBump, crashActive, even
           </span>
           <span style={{ color: '#00d4aa', fontFamily: "'Space Mono',monospace", fontSize: 13, fontWeight: 700 }}>{params.timeout} gün</span>
         </div>
-        <input type="range" min={5} max={60} value={params.timeout} onChange={e => setParams(p => ({ ...p, timeout: Number(e.target.value) }))} style={{ accentColor: '#00d4aa' }} />
+        <div style={{ padding: isMobile ? '12px 0' : '4px 0' }}>
+          <input type="range" min={5} max={60} value={params.timeout} onChange={e => setParams(p => ({ ...p, timeout: Number(e.target.value) }))} style={{ accentColor: '#00d4aa' }} />
+        </div>
       </div>
 
       {/* Penalty rate slider */}
@@ -89,7 +93,9 @@ export function ContractBuilder({ bot, trustScore, dominoBump, crashActive, even
             )}
           </div>
         </div>
-        <input type="range" min={5} max={50} value={params.penaltyRate} onChange={e => setParams(p => ({ ...p, penaltyRate: Number(e.target.value) }))} style={{ width: '100%', accentColor: '#00d4aa' }} />
+        <div style={{ padding: isMobile ? '12px 0' : '4px 0' }}>
+          <input type="range" min={5} max={50} value={params.penaltyRate} onChange={e => setParams(p => ({ ...p, penaltyRate: Number(e.target.value) }))} style={{ width: '100%', accentColor: '#00d4aa' }} />
+        </div>
       </div>
 
       {/* Oracle toggle */}
