@@ -128,7 +128,7 @@ function FullSimulation({
   coins, setCoins, trustScores, setTrustScores, setStats,
   setCapitalProtected, setLegalRisk,
   sessionStart, eventEffect, onRoundComplete, simYear, onAdvanceSimDate,
-  scEverUsed: _scEverUsed, sessionCount: _sessionCount,
+  scEverUsed, sessionCount,
 }: {
   abVariant: string; isForceClassic: boolean; isAIAdvisorProminent: boolean
   coins: number; setCoins: (fn: (c: number) => number) => void
@@ -506,6 +506,8 @@ function FullSimulation({
         method={(outcome?.method as 'smart' | 'classic' | 'arbitration') || 'classic'}
         sessionDurationMs={Date.now() - sessionStart}
         onDone={handleAutopsyDone}
+        scEverUsed={scEverUsed}
+        sessionCount={sessionCount}
       />
     </div>
   )

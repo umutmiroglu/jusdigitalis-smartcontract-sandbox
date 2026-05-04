@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import type { AutopsyResult, ContractMethod } from '../../types'
 import { computeOpportunityCostHuman } from '../../utils/math'
 import { track, logSimulation } from '../../utils/analytics'
+import { useCTAState } from '../../hooks/useCTAState'
+import { SmartCTA } from '../ui/SmartCTA'
 
 interface RowProps {
   label: string
@@ -27,13 +29,18 @@ interface EconomicAutopsyProps {
   method: ContractMethod
   sessionDurationMs: number
   onDone: () => void
+  scEverUsed: boolean
+  sessionCount: number
 }
 
-export function EconomicAutopsy({ autopsy, method, sessionDurationMs, onDone }: EconomicAutopsyProps) {
+export function EconomicAutopsy({ autopsy, method, sessionDurationMs, onDone, scEverUsed, sessionCount }: EconomicAutopsyProps) {
   const [viewed, setViewed] = useState(false)
   useEffect(() => { const t = setTimeout(() => setViewed(true), 2000); return () => clearTimeout(t) }, [])
   const humanCost = computeOpportunityCostHuman(autopsy.opportunityCost)
   const scAdvantageRealized = method !== 'smart' && autopsy.scSaving > 0
+
+  const lastOutcome = `${method === 'smart' ? 'sc' : 'classic'}_${autopsy.won ? 'win' : 'loss'}`
+  const cta = useCTAState({ lastOutcome, scEverUsed, sessionCount })
 
   useEffect(() => {
     if (viewed) {
@@ -98,7 +105,8 @@ export function EconomicAutopsy({ autopsy, method, sessionDurationMs, onDone }: 
           </div>
         )}
       </div>
-      <button onClick={onDone} style={{ width: '100%', padding: '14px 0', background: 'linear-gradient(135deg,#00d4aa,#0099ff)', border: 'none', borderRadius: 10, color: '#060a10', fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
+      <SmartCTA cta={cta} />
+      <button onClick={onDone} style={{ width: '100%', padding: '14px 0', marginTop: 12, background: 'linear-gradient(135deg,#00d4aa,#0099ff)', border: 'none', borderRadius: 10, color: '#060a10', fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
         Yeni Simülasyon →
       </button>
     </div>
