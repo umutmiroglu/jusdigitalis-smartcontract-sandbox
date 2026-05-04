@@ -97,6 +97,20 @@ export function EconomicAutopsy({ autopsy, method, sessionDurationMs, onDone, sc
           </p>
         </div>
       )}
+      {!autopsy.won && autopsy.opportunityCost > 0 && (
+        <div style={{ background: 'rgba(255,68,68,.1)', border: '1px solid rgba(255,68,68,.35)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+          <div style={{ color: '#ff4444', fontWeight: 700, marginBottom: 10, fontSize: 13 }}>⏳ Kaybettiğinizin Gerçek Bedeli</div>
+          <p style={{ color: '#fc8181', fontSize: 14, fontFamily: "'Space Mono',monospace", lineHeight: 1.8, marginBottom: 0 }}>
+            <strong>{autopsy.opportunityCost} JC</strong> = yaklaşık{' '}
+            <strong>{humanCost.hours} çalışma saati</strong> = <strong>{humanCost.weeks} haftalık emek</strong>
+          </p>
+          {autopsy.scSaving > 0 && (
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(0,212,170,.2)', color: '#68d391', fontSize: 13 }}>
+              ✓ Smart Contract olsaydı: <strong style={{ color: '#00d4aa' }}>{autopsy.scSaving} JC</strong> kurtarılırdı
+            </div>
+          )}
+        </div>
+      )}
       <div style={{ background: scAdvantageRealized ? 'rgba(255,68,68,.06)' : 'rgba(0,212,170,.06)', border: `1px solid ${scAdvantageRealized ? 'rgba(255,68,68,.2)' : 'rgba(0,212,170,.2)'}`, borderRadius: 12, padding: 16, marginBottom: 20 }}>
         <p style={{ color: scAdvantageRealized ? '#fc8181' : '#68d391', fontSize: 13, lineHeight: 1.7 }}>{autopsy.summary}</p>
         {scAdvantageRealized && (
