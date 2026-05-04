@@ -25,12 +25,13 @@ import {
   genContractId, pickRandom,
 } from './utils/math'
 import { applyTrustUpdate, computePlayerReputation, getReputationBadge } from './utils/trust'
-import { track, logSimulation, getABVariant } from './utils/analytics'
+import { track, logSimulation } from './utils/analytics'
 import type { Bot, Lawyer, ContractParams } from './types'
 import { botEvaluateContract } from './utils/trust'
 import { useCoinAnimation } from './hooks/useCoinAnimation'
 import { loadPersisted, clearPersisted } from './utils/persistence'
 import { useIsMobile } from './hooks/useIsMobile'
+import { useABVariant } from './hooks/useABVariant'
 
 // ─── ERROR BOUNDARY ───────────────────────────────────────────────────────────
 class ErrorBoundary extends Component<
@@ -123,17 +124,21 @@ const winCardStyle = { ...cardStyle, animation: 'winFlash .8s ease-out' }
 
 // ─── FULL SIMULATION ──────────────────────────────────────────────────────────
 function FullSimulation({
-  abVariant, coins, setCoins, trustScores, setTrustScores, setStats,
+  abVariant, isForceClassic, isAIAdvisorProminent,
+  coins, setCoins, trustScores, setTrustScores, setStats,
   setCapitalProtected, setLegalRisk,
   sessionStart, eventEffect, onRoundComplete, simYear, onAdvanceSimDate,
+  scEverUsed: _scEverUsed, sessionCount: _sessionCount,
 }: {
-  abVariant: string; coins: number; setCoins: (fn: (c: number) => number) => void
+  abVariant: string; isForceClassic: boolean; isAIAdvisorProminent: boolean
+  coins: number; setCoins: (fn: (c: number) => number) => void
   trustScores: Record<string, number>; setTrustScores: (fn: (s: Record<string, number>) => Record<string, number>) => void
   setStats: (fn: (s: Record<string, number>) => Record<string, number>) => void
   setCapitalProtected: (fn: (c: number) => number) => void
   setLegalRisk: (fn: (r: number) => number) => void
   sessionStart: number; eventEffect: Record<string, number | boolean> | null
   onRoundComplete: () => void; simYear: number; onAdvanceSimDate: (months: number) => void
+  scEverUsed: boolean; sessionCount: number
 }) {
   const [phase, setPhase] = useState('select_bot')
   const [selectedBot, setSelectedBot] = useState<Bot | null>(null)
@@ -180,7 +185,7 @@ function FullSimulation({
     return () => { if (execRafRef.current) cancelAnimationFrame(execRafRef.current) }
   }, [phase])
 
-  const isMethodLocked = abVariant === 'forceClassicFirst' && !hasPlayedClassic
+  const isMethodLocked = isForceClassic && !hasPlayedClassic
 
   function handleBotSelect(bot: Bot) {
     track('BOT_SELECT', { botId: bot.id })
@@ -319,7 +324,7 @@ function FullSimulation({
   )
 
   if (phase === 'choose_method' && selectedBot) {
-    const isAiVariant = abVariant === 'aiAdvisorProminent'
+    const isAiVariant = isAIAdvisorProminent
     const classicDeliverRate = computeClassicDirectRate(selectedBot, crashActive, eventEffect as never)
     return (
       <div style={cardStyle}>
@@ -593,7 +598,8 @@ function ComparisonTool({ onBack }: { onBack: () => void }) {
 
 // ─── APP ─────────────────────────────────────────────────────────────────────
 export function App() {
-  const abVariant = useRef(getABVariant()).current
+  const ab = useABVariant()
+  const abVariant = ab.variant
   const sessionStart = useRef(Date.now()).current
   const game = useGameState()
 
@@ -613,7 +619,7 @@ export function App() {
   }, [game.coins])
 
   useEffect(() => {
-    track('SESSION_START', { timestamp: Date.now(), abVariant })
+    track('SESSION_START', { timestamp: Date.now(), abVariant: ab.variant })
     const h = () => track('EXIT_INTENT', { sessionDurationMs: Date.now() - sessionStart })
     window.addEventListener('beforeunload', h)
     return () => window.removeEventListener('beforeunload', h)
@@ -829,6 +835,8 @@ export function App() {
           {activeModule === 'full_simulation' && (
             <FullSimulation
               abVariant={abVariant}
+              isForceClassic={ab.isForceClassic}
+              isAIAdvisorProminent={ab.isAIAdvisorProminent}
               coins={game.coins}
               setCoins={fn => game.setCoins(fn(game.coins))}
               trustScores={game.trustScores}
@@ -841,6 +849,8 @@ export function App() {
               onRoundComplete={handleRoundComplete}
               simYear={game.simDate.year}
               onAdvanceSimDate={advanceSimDate}
+              scEverUsed={game.stats.scUses > 0}
+              sessionCount={game.sessionCount}
             />
           )}
 
