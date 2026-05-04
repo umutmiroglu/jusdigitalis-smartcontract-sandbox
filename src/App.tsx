@@ -32,6 +32,7 @@ import { useCoinAnimation } from './hooks/useCoinAnimation'
 import { loadPersisted, clearPersisted } from './utils/persistence'
 import { useIsMobile } from './hooks/useIsMobile'
 import { useABVariant } from './hooks/useABVariant'
+import { SocialProofWidget } from './components/ui/SocialProofWidget'
 
 // ─── ERROR BOUNDARY ───────────────────────────────────────────────────────────
 class ErrorBoundary extends Component<
@@ -312,6 +313,7 @@ function FullSimulation({
           {coinDelta > 0 ? '+' : ''}{coinDelta} JC
         </div>
       )}
+      <SocialProofWidget />
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
         <h2 style={{ color: '#e2e8f0', fontSize: 22, marginBottom: 8 }}>Karşı Tarafı Seçin</h2>
         <p style={{ color: '#718096', fontSize: 13 }}>Kim ile anlaşma yapacaksınız?</p>
