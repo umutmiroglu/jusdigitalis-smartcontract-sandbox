@@ -716,7 +716,7 @@ export function GamePage() {
           isForceClassic={ab.isForceClassic}
           isAIAdvisorProminent={ab.isAIAdvisorProminent}
           coins={game.coins}
-          setCoins={fn => game.setCoins(fn(game.coins))}
+          setCoins={fn => game.setCoins(prev => fn(prev))}
           trustScores={game.trustScores}
           setTrustScores={fn => { const next = fn(game.trustScores as Record<string, number>); Object.keys(next).forEach(k => { if (next[k] !== (game.trustScores as Record<string, number>)[k]) game.applyTrust(k, 'sc_success') }); }}
           setStats={fn => game.updateStats(fn(game.stats as never) as never)}
