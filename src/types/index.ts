@@ -24,6 +24,7 @@ export type AnalyticsEventName =
   | 'RANDOM_EVENT'
   | 'LOAN_GIVEN'
   | 'LOAN_REFUSED'
+  | 'SCENARIO_SELECT'
 
 // ─── Bot ─────────────────────────────────────────────────────────────────────
 export interface BotDialogues {

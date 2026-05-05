@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useGameState } from '../hooks/useGameState'
 import { Header } from '../components/layout/Header'
 import { BotCard } from '../components/game/BotCard'
@@ -13,6 +14,8 @@ import { LoanModal } from '../components/modals/LoanModal'
 import { MiniLawsuit } from '../components/modals/MiniLawsuit'
 import { LegalTermTooltip } from '../components/ui/Tooltip'
 import { BOTS } from '../constants/bots'
+import { SCENARIOS } from '../constants/scenarios'
+import type { Scenario } from '../constants/scenarios'
 import { LEGAL_TERMS } from '../constants/legalTerms'
 import { RANDOM_EVENTS } from '../constants/events'
 import {
@@ -63,7 +66,7 @@ function FullSimulation({
   coins, setCoins, trustScores, setTrustScores, setStats,
   setCapitalProtected, setLegalRisk,
   sessionStart, eventEffect, onRoundComplete, simYear, onAdvanceSimDate,
-  scEverUsed, sessionCount,
+  scEverUsed, sessionCount, scenario,
 }: {
   abVariant: string; isForceClassic: boolean; isAIAdvisorProminent: boolean
   coins: number; setCoins: (fn: (c: number) => number) => void
@@ -73,10 +76,12 @@ function FullSimulation({
   setLegalRisk: (fn: (r: number) => number) => void
   sessionStart: number; eventEffect: Record<string, number | boolean> | null
   onRoundComplete: () => void; simYear: number; onAdvanceSimDate: (months: number) => void
-  scEverUsed: boolean; sessionCount: number
+  scEverUsed: boolean; sessionCount: number; scenario?: Scenario | null
 }) {
-  const [phase, setPhase] = useState('select_bot')
-  const [selectedBot, setSelectedBot] = useState<Bot | null>(null)
+  const [phase, setPhase] = useState(() => scenario ? 'choose_method' : 'select_bot')
+  const [selectedBot, setSelectedBot] = useState<Bot | null>(() =>
+    scenario ? (BOTS.find(b => b.id === scenario.botId) ?? null) : null
+  )
   const [hasPlayedClassic, setHasPlayedClassic] = useState(false)
   const [crashActive, setCrashActive] = useState(false)
   const [dominoBump, setDominoBump] = useState(0)
@@ -120,7 +125,8 @@ function FullSimulation({
     return () => { if (execRafRef.current) cancelAnimationFrame(execRafRef.current) }
   }, [phase])
 
-  const isMethodLocked = isForceClassic && !hasPlayedClassic
+  const isScenarioMethodLocked = scenario?.forcedMethod != null
+  const isMethodLocked = (isForceClassic && !hasPlayedClassic) || isScenarioMethodLocked
 
   function handleBotSelect(bot: Bot) {
     track('BOT_SELECT', { botId: bot.id })
@@ -129,7 +135,8 @@ function FullSimulation({
   }
 
   function handleMethodChoice(method: 'smart' | 'classic') {
-    if (isMethodLocked && method === 'smart') return
+    if (isScenarioMethodLocked && scenario?.forcedMethod && method !== scenario.forcedMethod) return
+    if (!isScenarioMethodLocked && isForceClassic && !hasPlayedClassic && method === 'smart') return
     track('METHOD_CHOICE', { chosenMethod: method })
     if (method === 'smart') { setPhase('sc_architect'); return }
     const deliverRate = computeClassicDirectRate(selectedBot!, crashActive, eventEffect as never)
@@ -264,6 +271,19 @@ function FullSimulation({
     const classicDeliverRate = computeClassicDirectRate(selectedBot, crashActive, eventEffect as never)
     return (
       <div style={cardStyle}>
+        {scenario && (
+          <div style={{ background: 'rgba(0,212,170,.06)', border: '1px solid rgba(0,212,170,.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 20 }}>
+            <div style={{ color: '#00d4aa', fontSize: 10, letterSpacing: 1.5, fontFamily: "'Space Mono',monospace", marginBottom: 6 }}>
+              {scenario.emoji} SENARYO: {scenario.title.toUpperCase()}
+            </div>
+            <p style={{ color: '#a0aec0', fontSize: 12, lineHeight: 1.7, margin: 0 }}>{scenario.context}</p>
+            {scenario.forcedMethod && (
+              <div style={{ marginTop: 8, color: '#f6ad55', fontSize: 11 }}>
+                ⚠️ Bu senaryoda önce <strong>{scenario.forcedMethod === 'classic' ? 'Klasik Sözleşme' : 'Smart Contract'}</strong> yolunu deneyin.
+              </div>
+            )}
+          </div>
+        )}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <span style={{ fontSize: 40 }}>{selectedBot.emoji}</span>
           <h2 style={{ color: '#e2e8f0', fontSize: 20, marginTop: 8, marginBottom: 4 }}>{selectedBot.name}</h2>
@@ -271,18 +291,34 @@ function FullSimulation({
           <div style={{ color: '#718096', fontSize: 13, fontStyle: 'italic' }}>"{pickRandom(selectedBot.dialogues.greet)}"</div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
-          <button onClick={() => handleMethodChoice('classic')} style={{ padding: '20px 16px', border: '2px solid rgba(255,107,53,.3)', borderRadius: 14, cursor: 'pointer', background: 'rgba(255,107,53,.06)', color: '#e2e8f0', fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 15, transition: 'all .2s' }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>⚖️</div>
-            <div>Klasik Sözleşme</div>
-            <div style={{ color: '#718096', fontSize: 12, marginTop: 6, fontWeight: 400 }}>Geleneksel yol</div>
-            <div style={{ marginTop: 8, color: '#f39c12', fontSize: 11 }}>Doğrudan teslimat: %{Math.round(classicDeliverRate * 100)}</div>
-          </button>
-          <button disabled={isMethodLocked} onClick={() => handleMethodChoice('smart')} style={{ padding: '20px 16px', border: `2px solid ${isMethodLocked ? 'rgba(255,255,255,.06)' : 'rgba(0,212,170,.4)'}`, borderRadius: 14, cursor: isMethodLocked ? 'not-allowed' : 'pointer', opacity: isMethodLocked ? 0.4 : 1, background: isMethodLocked ? 'transparent' : 'rgba(0,212,170,.08)', color: isMethodLocked ? '#4a5568' : '#e2e8f0', fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 15, transition: 'all .2s', boxShadow: !isMethodLocked && isAiVariant ? '0 0 30px rgba(0,212,170,.3)' : 'none' }}>
-            {isAiVariant && !isMethodLocked && <div style={{ fontSize: 10, color: '#00d4aa', fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>✦ ÖNERİLEN</div>}
-            <div style={{ fontSize: 28, marginBottom: 8 }}>⚡</div>
-            <div>Smart Contract</div>
-            <div style={{ color: isMethodLocked ? '#2d3748' : '#718096', fontSize: 12, marginTop: 6, fontWeight: 400 }}>Otomatik icra</div>
-          </button>
+          {(() => {
+            const classicLocked = isScenarioMethodLocked && scenario?.forcedMethod === 'smart'
+            const smartLocked = isMethodLocked && !(isScenarioMethodLocked && scenario?.forcedMethod === 'smart')
+            return (
+              <>
+                <button
+                  disabled={classicLocked}
+                  onClick={() => handleMethodChoice('classic')}
+                  style={{ padding: '20px 16px', border: `2px solid ${classicLocked ? 'rgba(255,255,255,.06)' : 'rgba(255,107,53,.3)'}`, borderRadius: 14, cursor: classicLocked ? 'not-allowed' : 'pointer', opacity: classicLocked ? 0.4 : 1, background: classicLocked ? 'transparent' : 'rgba(255,107,53,.06)', color: '#e2e8f0', fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 15, transition: 'all .2s' }}
+                >
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>⚖️</div>
+                  <div>Klasik Sözleşme</div>
+                  <div style={{ color: '#718096', fontSize: 12, marginTop: 6, fontWeight: 400 }}>Geleneksel yol</div>
+                  <div style={{ marginTop: 8, color: '#f39c12', fontSize: 11 }}>Doğrudan teslimat: %{Math.round(classicDeliverRate * 100)}</div>
+                </button>
+                <button
+                  disabled={smartLocked}
+                  onClick={() => handleMethodChoice('smart')}
+                  style={{ padding: '20px 16px', border: `2px solid ${smartLocked ? 'rgba(255,255,255,.06)' : 'rgba(0,212,170,.4)'}`, borderRadius: 14, cursor: smartLocked ? 'not-allowed' : 'pointer', opacity: smartLocked ? 0.4 : 1, background: smartLocked ? 'transparent' : 'rgba(0,212,170,.08)', color: smartLocked ? '#4a5568' : '#e2e8f0', fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 15, transition: 'all .2s', boxShadow: !smartLocked && isAiVariant ? '0 0 30px rgba(0,212,170,.3)' : 'none' }}
+                >
+                  {isAiVariant && !smartLocked && <div style={{ fontSize: 10, color: '#00d4aa', fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>✦ ÖNERİLEN</div>}
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>⚡</div>
+                  <div>Smart Contract</div>
+                  <div style={{ color: smartLocked ? '#2d3748' : '#718096', fontSize: 12, marginTop: 6, fontWeight: 400 }}>Otomatik icra</div>
+                </button>
+              </>
+            )
+          })()}
         </div>
         <button onClick={() => setPhase('select_bot')} style={{ marginTop: 16, padding: '8px 20px', background: 'transparent', border: 'none', color: '#4a5568', cursor: 'pointer', fontSize: 13 }}>← Bot Değiştir</button>
       </div>
@@ -457,6 +493,9 @@ export function GamePage() {
   const abVariant = ab.variant
   const sessionStart = useRef(Date.now()).current
   const game = useGameState()
+  const [searchParams] = useSearchParams()
+  const scenarioId = searchParams.get('scenario')
+  const activeScenario = scenarioId ? (SCENARIOS.find(s => s.id === scenarioId) ?? null) : null
 
   const insolvencyHandledRef = useRef(false)
   const nextEventAtRef = useRef(2 + Math.floor(Math.random() * 2))
@@ -690,6 +729,7 @@ export function GamePage() {
           onAdvanceSimDate={advanceSimDate}
           scEverUsed={game.stats.scUses > 0}
           sessionCount={game.sessionCount}
+          scenario={activeScenario}
         />
 
         <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,.06)', display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
