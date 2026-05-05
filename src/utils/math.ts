@@ -97,7 +97,7 @@ export function computeAutopsy(
     totalClassicLoss: courtFee + effectiveInflLoss + effectiveOppCost,
     annualRatePct: Math.round(annualRate * 100),
     summary: method === 'smart'
-      ? `Smart Contract seçerek ${courtFee} JC harç + %${Math.round((1 - inflMult) * 100)} enflasyon kaybından korunuştunuz.`
+      ? `Koşullu ifa sözleşmesi seçerek ${courtFee} JC harç + %${Math.round((1 - inflMult) * 100)} enflasyon kaybından korunuştunuz.`
       : totalYears === 0
         ? 'Klasik sözleşme başarıyla tamamlandı — karşı taraf yükümlülüğünü yerine getirdi.'
         : won

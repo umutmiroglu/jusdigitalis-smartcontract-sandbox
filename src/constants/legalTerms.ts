@@ -10,25 +10,25 @@ export const LEGAL_TERMS: Record<string, LegalTerm> = {
   cezaiSart: {
     short: 'Cezai Şart',
     definition: 'Sözleşmeyi ihlal eden tarafın ödeyeceği önceden belirlenmiş tazminat.',
-    detail: 'TBK md. 179-182. Smart Contract\'ta cezai şart otomatik icra edilir — mahkeme kararı gerekmez. Klasik sözleşmede tahsil için ayrıca dava açmanız gerekir.',
+    detail: 'TBK md. 179-182. Koşullu otomatik ifa sözleşmesinde cezai şart otomatik icra edilir — mahkeme kararı gerekmez. Klasik sözleşmede tahsil için ayrıca dava açmanız gerekir.',
     ref: 'TBK md. 179-182',
   },
   forceMajeure: {
     short: 'Force Majeure',
     definition: 'Tarafların kontrolü dışındaki olaylar nedeniyle sözleşme yükümlülüğünden kurtulma.',
-    detail: 'TBK md. 136. Oracle entegrasyonu ile force majeure koşulları zincir üstünde otomatik doğrulanabilir.',
+    detail: 'TBK md. 136. Doğrulama mekanizması ile force majeure koşulları bağımsız olarak otomatik teyit edilebilir.',
     ref: 'TBK md. 136',
   },
-  oracle: {
-    short: 'Oracle',
-    definition: 'Blockchain dışındaki gerçek dünya verisini akıllı sözleşmeye aktaran köprü.',
-    detail: 'Döviz kuru, hava durumu, lojistik takip gibi verileri doğrulanabilir şekilde zincire taşır.',
-    ref: 'Blockchain Hukuku',
+  dogrulamaMekanizmasi: {
+    short: 'Doğrulama Mekanizması',
+    definition: 'Sözleşme koşullarının tarafsız bir sistem tarafından otomatik olarak doğrulanması ve yerine getirilmesini sağlayan mekanizma.',
+    detail: 'TBK md. 136. Koşulların otomatik doğrulanması force majeure anlaşmazlıklarını önler ve tahsilat sürecini hızlandırır.',
+    ref: 'Borçlar Hukuku',
   },
   temerrut: {
     short: 'Temerrüt',
     definition: 'Borçlunun vadesinde ifa etmediği durum; alacaklıya ek haklar doğurur.',
-    detail: 'TBK md. 117. Temerrüt halinde yasal faiz işler (%9/yıl). Smart Contract\'ta temerrüt anında otomatik ceza kesilir.',
+    detail: 'TBK md. 117. Temerrüt halinde yasal faiz işler (%9/yıl). Koşullu otomatik ifa sözleşmesinde temerrüt anında otomatik ceza kesilir.',
     ref: 'TBK md. 117',
   },
 }

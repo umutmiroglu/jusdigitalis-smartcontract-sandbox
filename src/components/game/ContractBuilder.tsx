@@ -58,7 +58,7 @@ export function ContractBuilder({ bot, trustScore, dominoBump, crashActive, even
     <div>
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
         <div style={{ fontSize: 40, marginBottom: 8 }}>⚡</div>
-        <h3 style={{ color: '#e2e8f0', fontSize: 20, marginBottom: 4 }}>Smart Contract Mimarı</h3>
+        <h3 style={{ color: '#e2e8f0', fontSize: 20, marginBottom: 4 }}>Sözleşme Tasarımcısı</h3>
         <p style={{ color: '#718096', fontSize: 13 }}>Sözleşme şartlarını ayarlayın</p>
         {crashActive && <div style={{ background: 'rgba(255,68,68,.1)', border: '1px solid rgba(255,68,68,.3)', color: '#fc8181', borderRadius: 8, padding: '8px 12px', marginTop: 8, fontSize: 12 }}>⚠️ Piyasa krizi aktif</div>}
         {eventEffect?.rewardBonus && <div style={{ background: 'rgba(0,212,170,.08)', border: '1px solid rgba(0,212,170,.2)', color: '#68d391', borderRadius: 8, padding: '8px 12px', marginTop: 8, fontSize: 12 }}>✦ Aktif olay: ödüller +%{Math.round(eventEffect.rewardBonus * 100)}</div>}
@@ -102,7 +102,7 @@ export function ContractBuilder({ bot, trustScore, dominoBump, crashActive, even
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
         <div>
           <div style={{ color: '#a0aec0', fontSize: 13 }}>
-            <LegalTermTooltip termKey="oracle" legalTerms={legalTerms}>Oracle Entegrasyonu</LegalTermTooltip>
+            <LegalTermTooltip termKey="dogrulamaMekanizmasi" legalTerms={legalTerms}>Doğrulama Mekanizması</LegalTermTooltip>
           </div>
           <div style={{ color: '#4a5568', fontSize: 11, marginTop: 2 }}>+{ORACLE_FEE} JC · Başarı oranını önemli artırır</div>
         </div>

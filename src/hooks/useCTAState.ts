@@ -18,12 +18,12 @@ const CTA_HREF = 'https://jusdigitalis.com'
 
 const CTA_CONFIG: Record<CTAVariant, Omit<CTAState, 'variant'>> = {
   urgent: {
-    primaryLabel: 'Smart Contract ile Riski Sıfırla',
+    primaryLabel: 'Koşullu İfa ile Riski Sıfırla',
     primaryHref: CTA_HREF,
     secondaryLabel: 'Önce ücretsiz dene →',
   },
   success: {
-    primaryLabel: 'Gerçek Smart Contract Kur',
+    primaryLabel: 'Koşullu Otomatik İfa Sözleşmesi Kur',
     primaryHref: CTA_HREF,
   },
   personal: {
@@ -31,7 +31,7 @@ const CTA_CONFIG: Record<CTAVariant, Omit<CTAState, 'variant'>> = {
     primaryHref: CTA_HREF,
   },
   default: {
-    primaryLabel: 'Smart Contract Hakkında Bilgi Al',
+    primaryLabel: 'Koşullu İfa Hakkında Bilgi Al',
     primaryHref: CTA_HREF,
   },
 }
@@ -48,7 +48,7 @@ function resolveVariant(
 ): CTAVariant {
   // Priority 1: urgent — classic loss AND never tried SC
   if (lastOutcome === 'classic_loss' && !scEverUsed) return 'urgent'
-  // Priority 2: success — smart contract win
+  // Priority 2: success — koşullu ifa win
   if (lastOutcome === 'sc_win') return 'success'
   // Priority 3: personal — returning user (3+ sessions)
   if (sessionCount >= 3) return 'personal'

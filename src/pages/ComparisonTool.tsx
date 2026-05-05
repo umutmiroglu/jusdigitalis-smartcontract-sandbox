@@ -160,7 +160,7 @@ export function ComparisonTool() {
             Karşılaştırma Aracı
           </h1>
           <p style={{ color: '#718096', fontSize: 13, lineHeight: 1.8, maxWidth: 440, margin: '0 auto' }}>
-            Sözleşme parametrelerinizi girin; klasik yöntem ile smart contract'ı yan yana karşılaştırın.
+            Sözleşme parametrelerinizi girin; klasik yöntem ile koşullu ifa sözleşmesini yan yana karşılaştırın.
           </p>
         </div>
 
@@ -273,14 +273,14 @@ export function ComparisonTool() {
                   color: result.recommendation === 'smart' ? '#00d4aa' : result.recommendation === 'classic' ? '#f39c12' : '#a0aec0',
                 }}>
                   {result.recommendation === 'smart'
-                    ? 'Smart Contract Öneriliyor'
+                    ? 'Koşullu İfa Öneriliyor'
                     : result.recommendation === 'classic'
                     ? 'Klasik Sözleşme Yeterli'
                     : 'Nötr — Risk Dengelenmiş'}
                 </div>
                 <div style={{ color: '#718096', fontSize: 12, marginTop: 2 }}>
                   {result.recommendation === 'smart'
-                    ? 'Oracle koruması bu sözleşme profilinde önemli avantaj sağlıyor.'
+                    ? 'Doğrulama mekanizması bu sözleşme profilinde önemli avantaj sağlıyor.'
                     : result.recommendation === 'classic'
                     ? 'Düşük riskli karşı tarafla klasik yöntem yeterli koruma sunar.'
                     : 'Her iki yöntem de benzer risk-getiri profili sunuyor.'}
@@ -311,12 +311,12 @@ export function ComparisonTool() {
               {/* Smart */}
               <div style={{ background: 'rgba(0,212,170,.05)', border: '1px solid rgba(0,212,170,.2)', borderRadius: 14, padding: 20 }}>
                 <div style={{ color: '#00d4aa', fontWeight: 700, fontSize: 11, marginBottom: 16, fontFamily: "'Space Mono',monospace", letterSpacing: 1 }}>
-                  ⚡ SMART CONTRACT
+                  ⚡ KOŞULLU İFA
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <MetricRow label="Başarı oranı" value={`%${result.smart.successRate}`} color="#00d4aa" />
                   <MetricRow label="Dava süresi" value="0 — otomatik icra" color="#00d4aa" />
-                  <MetricRow label="Oracle ücreti" value={`${result.smart.oracleFee} JC`} color="#63b3ed" />
+                  <MetricRow label="Doğrulama ücreti" value={`${result.smart.oracleFee} JC`} color="#63b3ed" />
                   <MetricRow label="Sermaye koruması" value={`${result.smart.protection} JC`} color="#00d4aa" bold />
                 </div>
               </div>
@@ -325,7 +325,7 @@ export function ComparisonTool() {
             {/* Delta highlight */}
             {result.recommendation === 'smart' && (
               <div style={{ background: 'rgba(0,212,170,.06)', border: '1px solid rgba(0,212,170,.2)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#68d391', textAlign: 'center' }}>
-                ⚡ Smart Contract, klasik yönteme kıyasla{' '}
+                ⚡ Koşullu ifa sözleşmesi, klasik yönteme kıyasla{' '}
                 <strong style={{ fontFamily: "'Space Mono',monospace" }}>
                   {result.classic.worstCaseLoss - result.smart.oracleFee} JC
                 </strong>{' '}

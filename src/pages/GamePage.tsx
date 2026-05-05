@@ -147,7 +147,9 @@ function FullSimulation({
   function handleShippingDelivered() {
     const { reward } = computeDynamicReward(selectedBot!, crashActive, eventEffect as never)
     const profit = reward - selectedBot!.basePrice
-    setCoins(c => c + profit); queueCoinAnim(profit)
+    // Deduct payment first so the cost is visible, then add reward (matches SC UX)
+    setCoins(c => c - selectedBot!.basePrice); queueCoinAnim(-selectedBot!.basePrice)
+    setTimeout(() => { setCoins(c => c + reward); queueCoinAnim(reward) }, 500)
     setTrustScores(s => applyTrustUpdate(s as never, selectedBot!.id, 'classic_success'))
     setDominoBump(d => Math.max(0, d - DOMINO_RECOVERY))
     setCapitalProtected(c => c + selectedBot!.basePrice)
@@ -279,7 +281,7 @@ function FullSimulation({
             <p style={{ color: '#a0aec0', fontSize: 12, lineHeight: 1.7, margin: 0 }}>{scenario.context}</p>
             {scenario.forcedMethod && (
               <div style={{ marginTop: 8, color: '#f6ad55', fontSize: 11 }}>
-                ⚠️ Bu senaryoda önce <strong>{scenario.forcedMethod === 'classic' ? 'Klasik Sözleşme' : 'Smart Contract'}</strong> yolunu deneyin.
+                ⚠️ Bu senaryoda önce <strong>{scenario.forcedMethod === 'classic' ? 'Klasik Sözleşme' : 'Koşullu İfa'}</strong> yolunu deneyin.
               </div>
             )}
           </div>
@@ -313,7 +315,7 @@ function FullSimulation({
                 >
                   {isAiVariant && !smartLocked && <div style={{ fontSize: 10, color: '#00d4aa', fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>✦ ÖNERİLEN</div>}
                   <div style={{ fontSize: 28, marginBottom: 8 }}>⚡</div>
-                  <div>Smart Contract</div>
+                  <div>Koşullu İfa</div>
                   <div style={{ color: smartLocked ? '#2d3748' : '#718096', fontSize: 12, marginTop: 6, fontWeight: 400 }}>Otomatik icra</div>
                 </button>
               </>
@@ -349,7 +351,7 @@ function FullSimulation({
         <div style={{ height: '100%', width: `${execProgress}%`, background: 'linear-gradient(90deg,#00d4aa,#0099ff)', borderRadius: 3, transition: 'width .04s linear' }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#4a5568', marginBottom: 16 }}>
-        <span>{execProgress < 30 ? 'İmza doğrulanıyor…' : execProgress < 60 ? 'Blok onayı bekleniyor…' : execProgress < 85 ? 'Oracle verisi çekiliyor…' : 'Sözleşme aktif hale geliyor…'}</span>
+        <span>{execProgress < 30 ? 'İmza doğrulanıyor…' : execProgress < 60 ? 'Koşullar işleniyor…' : execProgress < 85 ? 'Koşullar doğrulanıyor…' : 'Sözleşme aktif hale geliyor…'}</span>
         <span style={{ fontFamily: "'Space Mono',monospace", color: '#00d4aa' }}>{execProgress}%</span>
       </div>
       <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, color: '#2d3748' }}>{contractId}</div>
@@ -416,7 +418,7 @@ function FullSimulation({
         </div>
         <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 11, color: '#4a5568', textAlign: 'center', marginBottom: 16 }}>{contractId}</div>
         <LegalReceipt
-          title="SMART CONTRACT ÖZETI" color="#00d4aa"
+          title="KOŞULLU İFA ÖZETİ" color="#00d4aa"
           entries={[
             { label: 'Ödenen', value: `${totalCost} JC` },
             (outcome.success as boolean)
@@ -466,7 +468,7 @@ function FullSimulation({
           <span style={{ fontSize: 20 }}>{selectedBot.emoji}</span>
           <span style={{ color: '#a0aec0', fontSize: 13, marginLeft: 8, fontStyle: 'italic' }}>"{outcome.dialogue as string}"</span>
         </div>
-        <button onClick={() => setPhase('autopsy')} style={{ width: '100%', marginTop: 16, padding: '14px 0', background: 'linear-gradient(135deg,#ff6b35,#ff4444)', border: 'none', borderRadius: 10, color: '#fff', fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Smart Contract ile Karşılaştır →</button>
+        <button onClick={() => setPhase('autopsy')} style={{ width: '100%', marginTop: 16, padding: '14px 0', background: 'linear-gradient(135deg,#ff6b35,#ff4444)', border: 'none', borderRadius: 10, color: '#fff', fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Koşullu İfa ile Karşılaştır →</button>
       </div>
     )
   }
@@ -607,7 +609,7 @@ export function GamePage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(6,10,16,.92)', backdropFilter: 'blur(6px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <div style={{ background: '#0d1421', border: '1px solid rgba(0,212,170,.25)', borderRadius: 20, padding: '40px 36px', maxWidth: 480, width: '100%', textAlign: 'center', boxShadow: '0 24px 64px rgba(0,0,0,.6)' }}>
             <div style={{ fontSize: 44, marginBottom: 16 }}>⚖️</div>
-            <h2 style={{ color: '#e2e8f0', fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 22, marginBottom: 14, lineHeight: 1.3 }}>JusDigitalis Smart Contract Sandbox</h2>
+            <h2 style={{ color: '#e2e8f0', fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 22, marginBottom: 14, lineHeight: 1.3 }}>JusDigitalis Koşullu İfa Sandbox</h2>
             <p style={{ color: '#a0aec0', fontSize: 14, lineHeight: 1.7, marginBottom: 28 }}>Bu simülasyon eğitim amaçlıdır. Tüm veriler anonimdir — kişisel bilgi toplanmaz.</p>
             <button
               onClick={() => { try { localStorage.setItem('jd_consent_given', '1') } catch {} game.setShowConsent(false) }}

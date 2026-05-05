@@ -114,7 +114,7 @@ export function QuickDemo() {
             </h1>
             <p style={{ color: '#718096', fontSize: 14, lineHeight: 1.8, maxWidth: 480, margin: '0 auto 32px' }}>
               Aynı karşı tarafla hem <strong style={{ color: '#ff6b35' }}>Klasik Sözleşme</strong> hem de{' '}
-              <strong style={{ color: '#00d4aa' }}>Smart Contract</strong> simüle edilir.
+              <strong style={{ color: '#00d4aa' }}>Koşullu İfa Sözleşmesi</strong> simüle edilir.
               Hangisi daha iyi sonuç verir?
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 32, flexWrap: 'wrap' }}>
@@ -125,7 +125,7 @@ export function QuickDemo() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
                 <div style={{ color: '#ff6b35', fontSize: 13 }}>⚖️ Klasik → mahkeme riski</div>
-                <div style={{ color: '#00d4aa', fontSize: 13 }}>⚡ Smart → oracle koruması</div>
+                <div style={{ color: '#00d4aa', fontSize: 13 }}>⚡ Koşullu ifa → doğrulama koruması</div>
               </div>
             </div>
             <button
@@ -150,7 +150,7 @@ export function QuickDemo() {
             <div style={{ color: '#4a5568', fontFamily: "'Space Mono',monospace", fontSize: 12 }}>{progress}%</div>
             <div style={{ marginTop: 24, color: '#718096', fontSize: 13 }}>
               {progress < 33 ? '⚖️ Klasik yöntem işleniyor…'
-                : progress < 66 ? '⚡ Smart contract çalıştırılıyor…'
+                : progress < 66 ? '⚡ Koşullu ifa sözleşmesi çalıştırılıyor…'
                 : '🔬 Ekonomik analiz yapılıyor…'}
             </div>
           </div>
@@ -205,7 +205,7 @@ export function QuickDemo() {
                 border: `1px solid ${result.smart.won ? 'rgba(0,212,170,.4)' : 'rgba(0,153,255,.3)'}`,
                 borderRadius: 14, padding: 20,
               }}>
-                <div style={{ color: '#00d4aa', fontWeight: 700, marginBottom: 16, fontSize: 13 }}>⚡ Smart Contract</div>
+                <div style={{ color: '#00d4aa', fontWeight: 700, marginBottom: 16, fontSize: 13 }}>⚡ Koşullu İfa</div>
 
                 {/* Outcome badge */}
                 <div style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 20, marginBottom: 14, fontSize: 12, fontWeight: 700, background: result.smart.won ? 'rgba(0,212,170,.15)' : 'rgba(0,153,255,.15)', color: result.smart.won ? '#00d4aa' : '#63b3ed' }}>
@@ -215,7 +215,7 @@ export function QuickDemo() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: '#718096' }}>
                   <div>⚡ Anında icra</div>
                   {result.smart.won
-                    ? <div>🔒 Oracle korumalı</div>
+                    ? <div>🔒 Doğrulama mekanizmalı</div>
                     : <div style={{ color: '#63b3ed' }}>🔒 Kapital iade edildi</div>}
                 </div>
 
@@ -239,7 +239,7 @@ export function QuickDemo() {
                 <>
                   <span style={{ fontSize: 22 }}>⚡</span>
                   <span style={{ color: '#00d4aa', fontWeight: 700, fontSize: 15 }}>
-                    Smart Contract <strong style={{ fontFamily: "'Space Mono',monospace" }}>{Math.abs(scDelta)} JC</strong> daha iyi
+                    Koşullu İfa <strong style={{ fontFamily: "'Space Mono',monospace" }}>{Math.abs(scDelta)} JC</strong> daha iyi
                   </span>
                 </>
               ) : scDelta === 0 ? (

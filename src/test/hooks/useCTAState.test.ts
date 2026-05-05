@@ -3,14 +3,14 @@ import { describe, it, expect } from 'vitest'
 import { useCTAState } from '../../hooks/useCTAState'
 
 describe('useCTAState', () => {
-  it('classic_loss + scEverUsed=false → urgent variant with Smart Contract in label', () => {
+  it('classic_loss + scEverUsed=false → urgent variant with koşullu ifa in label', () => {
     const { result } = renderHook(() => useCTAState({
       lastOutcome: 'classic_loss',
       scEverUsed: false,
       sessionCount: 0,
     }))
     expect(result.current.variant).toBe('urgent')
-    expect(result.current.primaryLabel).toContain('Smart Contract')
+    expect(result.current.primaryLabel).toContain('Koşullu İfa')
   })
 
   it('sc_win → success variant', () => {

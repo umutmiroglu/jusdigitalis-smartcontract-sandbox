@@ -1,0 +1,138 @@
+{
+  "meta": {
+    "olusturulma": "2026-05-05",
+    "kaynak": "CLAUDE.md — Yasaklı Terminoloji bölümü",
+    "amac": "HSK Yüksek Müşaviri görüşmesi için regülatör-güvenli terminoloji rehberi",
+    "kural": "Aşağıdaki yasaklı kelimeler UI metni, kod yorumu ve dokümantasyonda HİÇBİR YERDE kullanılamaz"
+  },
+  "eslestirmeler": [
+    {
+      "yasakli": "smart contract",
+      "alternatifler": [
+        "koşullu otomatik ifa sözleşmesi",
+        "otomatik ifa sözleşmesi",
+        "koşul-tetikli sözleşme"
+      ],
+      "oncelikli_alternatif": "koşullu otomatik ifa sözleşmesi",
+      "baglamlar": {
+        "UI metni": "koşullu otomatik ifa sözleşmesi",
+        "kısa etiket / buton": "otomatik ifa",
+        "teknik kod tanımlayıcı (internal)": "sc (mevcut kısaltma korunabilir)"
+      },
+      "mevcut_kodda_gecis_sayisi": 30,
+      "not": "Kod içi değişken adları (sc, scRate, scSaving) bu kapsamda değil — bunlar internal identifier"
+    },
+    {
+      "yasakli": "blockchain",
+      "alternatifler": [
+        "dijital icra altyapısı",
+        "dağıtık kayıt altyapısı",
+        "koşul doğrulama altyapısı"
+      ],
+      "oncelikli_alternatif": "dijital icra altyapısı",
+      "baglamlar": {
+        "UI metni": "dijital icra altyapısı",
+        "teknik bağlam": "koşul doğrulama altyapısı"
+      },
+      "mevcut_kodda_gecis_sayisi": 1,
+      "not": "Sadece src/constants/events.ts:7 — 'Blockchain altyapısına rekor yatırım'"
+    },
+    {
+      "yasakli": "oracle",
+      "alternatifler": [
+        "doğrulama mekanizması",
+        "koşul doğrulayıcı",
+        "dış veri bağlantısı"
+      ],
+      "oncerikli_alternatif": "doğrulama mekanizması",
+      "baglamlar": {
+        "UI metni / etiket": "doğrulama mekanizması",
+        "kısa etiket": "doğrulayıcı",
+        "kod tanımlayıcı (useOracle)": "useVerification — Aşama 2'de yeniden adlandırılacak",
+        "sabit adı (ORACLE_FEE)": "VERIFICATION_FEE — Aşama 2'de yeniden adlandırılacak"
+      },
+      "mevcut_kodda_gecis_sayisi": 22,
+      "not": "useOracle, ORACLE_FEE, oracleFee gibi kod tanımlayıcıları Aşama 1'de UI metninde, Aşama 2'de kod seviyesinde değiştirilecek"
+    },
+    {
+      "yasakli": "kripto",
+      "alternatifler": [
+        "dijital varlık",
+        "programatik ödeme"
+      ],
+      "oncelikli_alternatif": "dijital varlık",
+      "baglamlar": {
+        "UI metni": "dijital varlık"
+      },
+      "mevcut_kodda_gecis_sayisi": 0,
+      "not": "Mevcut src/ kodunda tespit edilmedi"
+    },
+    {
+      "yasakli": "crypto",
+      "alternatifler": [
+        "dijital varlık",
+        "programatik ödeme"
+      ],
+      "oncelikli_alternatif": "dijital varlık",
+      "baglamlar": {
+        "UI metni": "dijital varlık"
+      },
+      "mevcut_kodda_gecis_sayisi": 0,
+      "not": "Mevcut src/ kodunda tespit edilmedi"
+    },
+    {
+      "yasakli": "web3",
+      "alternatifler": [
+        "dijital hukuk altyapısı",
+        "programatik hukuk teknolojisi"
+      ],
+      "oncelikli_alternatif": "dijital hukuk altyapısı",
+      "baglamlar": {
+        "UI metni": "dijital hukuk altyapısı"
+      },
+      "mevcut_kodda_gecis_sayisi": 0,
+      "not": "Mevcut src/ kodunda tespit edilmedi"
+    },
+    {
+      "yasakli": "token",
+      "alternatifler": [
+        "ödeme birimi",
+        "JC (JusCoin — oyun içi birim, sorunsuz)"
+      ],
+      "oncelikli_alternatif": "ödeme birimi",
+      "baglamlar": {
+        "UI metni": "ödeme birimi"
+      },
+      "mevcut_kodda_gecis_sayisi": 0,
+      "not": "package-lock.json'da css-tokenizer, js-tokens gibi paket isimlerinde geçiyor — false positive, değiştirilmeyecek"
+    },
+    {
+      "yasakli": "distributed ledger",
+      "alternatifler": [
+        "dağıtık kayıt sistemi",
+        "dijital icra altyapısı"
+      ],
+      "oncelikli_alternatif": "dijital icra altyapısı",
+      "baglamlar": {
+        "UI metni": "dijital icra altyapısı"
+      },
+      "mevcut_kodda_gecis_sayisi": 0,
+      "not": "Mevcut src/ kodunda tespit edilmedi"
+    }
+  ],
+  "ozel_durumlar": {
+    "legalTerms_oracle_entry": {
+      "dosya": "src/constants/legalTerms.ts",
+      "durum": "Bu giriş oyun içi eğitim sözlüğünde oracle'ı açıklıyor. Aşama 1'de kaldırılacak ya da 'doğrulama mekanizması' başlığıyla yeniden yazılacak.",
+      "eylem": "Aşama 1 kapsamında yeniden yaz"
+    },
+    "sc_kode_kisaltmasi": {
+      "aciklama": "'sc' kısaltması (scRate, scSaving, scSuccessRate vb.) kod içi identifier — kullanıcıya görünmüyor. Bu kısaltmalar Aşama 1 kapsamı dışında.",
+      "eylem": "Aşama 2'de değerlendir"
+    },
+    "test_dosyalari": {
+      "aciklama": "Test dosyalarında 'oracle', 'Smart Contract' geçiyor. Test isimleri kullanıcıya görünmez ama terminoloji tutarlılığı için Aşama 1'in sonunda güncellenebilir.",
+      "eylem": "Aşama 1 sonunda, UI değişiklikleriyle birlikte güncelle"
+    }
+  }
+}

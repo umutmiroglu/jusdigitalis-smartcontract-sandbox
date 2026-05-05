@@ -58,7 +58,7 @@ export function EconomicAutopsy({ autopsy, method, sessionDurationMs, onDone, sc
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
         <div style={{ background: method === 'smart' ? 'rgba(0,212,170,.08)' : 'rgba(255,255,255,.03)', border: `1px solid ${method === 'smart' ? 'rgba(0,212,170,.4)' : 'rgba(255,255,255,.08)'}`, borderRadius: 12, padding: 16 }}>
-          <div style={{ color: '#00d4aa', fontWeight: 700, marginBottom: 12, fontSize: 13 }}>⚡ Smart Contract</div>
+          <div style={{ color: '#00d4aa', fontWeight: 700, marginBottom: 12, fontSize: 13 }}>⚡ Koşullu İfa</div>
           <Row label="Mahkeme harcı"    value="0 JC"   color="#00d4aa" note="Yok" />
           <Row label="Enflasyon kaybı"  value="0 JC"   color="#00d4aa" note="Anında" />
           <Row label="Fırsat maliyeti"  value="0 JC"   color="#00d4aa" note="0 yıl" />
@@ -106,7 +106,7 @@ export function EconomicAutopsy({ autopsy, method, sessionDurationMs, onDone, sc
           </p>
           {autopsy.scSaving > 0 && (
             <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(0,212,170,.2)', color: '#68d391', fontSize: 13 }}>
-              ✓ Smart Contract olsaydı: <strong style={{ color: '#00d4aa' }}>{autopsy.scSaving} JC</strong> kurtarılırdı
+              ✓ Koşullu ifa sözleşmesi olsaydı: <strong style={{ color: '#00d4aa' }}>{autopsy.scSaving} JC</strong> kurtarılırdı
             </div>
           )}
         </div>

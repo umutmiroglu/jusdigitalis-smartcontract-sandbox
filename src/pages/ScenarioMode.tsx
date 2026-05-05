@@ -40,7 +40,7 @@ export function ScenarioMode() {
                 Senaryo Modu
               </h1>
               <p style={{ color: '#718096', fontSize: 13, lineHeight: 1.8, maxWidth: 480, margin: '0 auto' }}>
-                Gerçek ticari uyuşmazlıklara dayalı senaryolarla smart contract'ın hukuki ve ekonomik avantajlarını keşfedin.
+                Gerçek ticari uyuşmazlıklara dayalı senaryolarla koşullu otomatik ifa sözleşmesinin hukuki ve ekonomik avantajlarını keşfedin.
               </p>
             </div>
 
@@ -139,7 +139,7 @@ export function ScenarioMode() {
             {/* Forced method note */}
             {selected.forcedMethod && (
               <div style={{ background: 'rgba(255,107,53,.06)', border: '1px solid rgba(255,107,53,.2)', borderRadius: 10, padding: '10px 16px', marginBottom: 20, fontSize: 12, color: '#f6ad55' }}>
-                ⚠️ Bu senaryoda önce <strong>{selected.forcedMethod === 'classic' ? 'Klasik Sözleşme' : 'Smart Contract'}</strong> yolunu deneyeceksiniz.
+                ⚠️ Bu senaryoda önce <strong>{selected.forcedMethod === 'classic' ? 'Klasik Sözleşme' : 'Koşullu İfa'}</strong> yolunu deneyeceksiniz.
               </div>
             )}
 

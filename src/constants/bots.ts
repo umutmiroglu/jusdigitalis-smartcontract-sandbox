@@ -24,8 +24,8 @@ export const BOTS = [
     priceFlexibility: 0.05,
     failureType: 'force_majeure' as const,
     dialogues: {
-      greet:       ['Biz yaşlı adamız, ne anlarız bu smart contract denen şeyden…', 'Evlat, ben sözümün eri bir adamım.'],
-      smart:       ['Smart contract mı? Tamam tamam, imzalıyorum.', 'Bilgisayarlar benim yerime mi konuşacak şimdi?'],
+      greet:       ['Biz yaşlı adamız, ne anlarız bu otomatik sözleşme denen şeyden…', 'Evlat, ben sözümün eri bir adamım.'],
+      smart:       ['Koşullu ifa sözleşmesi mi? Tamam tamam, imzalıyorum.', 'Bilgisayarlar benim yerime mi konuşacak şimdi?'],
       success:     ['Gördün mü? Söz verdiysem yerine getiririm.', 'İşte bu. Ticaret böyle yapılır.'],
       fail:        ['Allah\'ım, ben de bilmiyordum…', 'Çocuk, bu benim elimde değildi.'],
       loanRequest: ['Sıkışık durumdayım. Küçük bir yardım… Geri öderim tabii.', 'Güvenin bana — her zaman sözümün eri oldum.'],
@@ -57,7 +57,7 @@ export const BOTS = [
     failureType: 'fraud' as const,
     dialogues: {
       greet:       ['Para peşin, teslimat… zaman içinde olur.', 'Sözleşmeye bak, her şey yazıyor.'],
-      smart:       ['Smart contract ha? İade ediliyor… ilginç.', 'Şartlar çok sert ama bakabiliriz.'],
+      smart:       ['Otomatik ifa ha? İade ediliyor… ilginç.', 'Şartlar çok sert ama bakabiliriz.'],
       success:     ['Görüyor musun? Ben de teslim ederim. Bazen.', 'Bugün şanslı günündü.'],
       fail:        ['Teknik sorunlar çıktı. Anlarsın.', '\'Makul süre\' diyordu. Ben de makul buldum.'],
       loanRequest: ['Kısa süreli bir nakit ihtiyacım var. Güvenilir bir teklif.', 'İş fırsatı çıktı. Yatırım dönecek sana.'],
@@ -89,7 +89,7 @@ export const BOTS = [
     failureType: 'delay' as const,
     dialogues: {
       greet:       ['Taşınmaz işi budur, her şey kademeli ilerler.', 'Projemiz hazır, ruhsatlar tamam.'],
-      smart:       ['Smart contract, taşınmazlarda mı? İlginç.', 'Ruhsat gecikmesi de ceza kapsamında mı?'],
+      smart:       ['Otomatik ifa, taşınmazlarda mı? İlginç.', 'Ruhsat gecikmesi de ceza kapsamında mı?'],
       success:     ['Proje teslim. Biraz geciktik ama teslim ettik.', 'İnşaat böyle bir şeydir.'],
       fail:        ['Belediye ruhsatı vermedi. Bizim elimizde değil.', 'Malzeme fiyatları üç katına çıktı.'],
       loanRequest: ['Nakit akışında geçici bir sorun var. Kısa vadeli borç.', 'Projeye malzeme alacağım. Geri ödeme garantiliyim.'],

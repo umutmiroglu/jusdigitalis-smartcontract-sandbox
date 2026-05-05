@@ -4,7 +4,7 @@ export const RANDOM_EVENTS = [
   // Positive
   { id: 'foreign_capital', type: 'positive' as const, emoji: '💰', title: 'Yabancı Sermaye Girişi',    description: 'Yabancı yatırımcı güveni yükseldi. Hazineye 150 JC eklendi, ödüller +%15.',  effect: { rewardBonus: 0.15, successBonus: 0.08, coinBonus: 150 } },
   { id: 'trade_deal',      type: 'positive' as const, emoji: '🤝', title: 'Ticaret Anlaşması Bonusu', description: 'Yeni ikili ticaret anlaşması imzalandı. Tüm başarı oranları +%10.',          effect: { successBonus: 0.10, dominoBumpReduce: 0.10 } },
-  { id: 'tech_boom',       type: 'positive' as const, emoji: '💻', title: 'Teknoloji Yatırım Dalgası', description: 'Blockchain altyapısına rekor yatırım. Smart Contract başarısı +%15.',        effect: { scSuccessBonus: 0.15, coinBonus: 80 } },
+  { id: 'tech_boom',       type: 'positive' as const, emoji: '💻', title: 'Teknoloji Yatırım Dalgası', description: 'Dijital icra altyapısına rekor yatırım. Koşullu ifa sözleşmesi başarısı +%15.',        effect: { scSuccessBonus: 0.15, coinBonus: 80 } },
   { id: 'credit_subsidy',  type: 'positive' as const, emoji: '🏛️', title: 'Hazine Kredi Desteği',     description: 'Devlet KOBİ destek paketi açıkladı. Hazineye 100 JC eklendi.',             effect: { coinBonus: 100, successBonus: 0.05 } },
   // Negative
   { id: 'pandemic_shock',  type: 'negative' as const, emoji: '🦠', title: 'Pandemi Şoku',              description: 'Salgın piyasaları sarstı. Başarı oranları düştü, piyasa krizi aktif.',       effect: { crashActive: true } },
