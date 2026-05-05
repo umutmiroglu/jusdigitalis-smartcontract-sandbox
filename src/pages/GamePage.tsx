@@ -36,6 +36,8 @@ import { loadPersisted, clearPersisted } from '../utils/persistence'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useABVariant } from '../hooks/useABVariant'
 import { SocialProofWidget } from '../components/ui/SocialProofWidget'
+import { useCascadeState } from '../hooks/useCascadeState'
+import type { ActiveContract } from '../types/cascade'
 
 // ─── LEGAL RECEIPT ────────────────────────────────────────────────────────────
 function LegalReceipt({ entries, title, total, color = '#00d4aa' }: {
@@ -67,6 +69,7 @@ function FullSimulation({
   setCapitalProtected, setLegalRisk,
   sessionStart, eventEffect, onRoundComplete, simYear, onAdvanceSimDate,
   scEverUsed, sessionCount, scenario,
+  onCascadeAdd, onCascadeResolve, onCascadeReset,
 }: {
   abVariant: string; isForceClassic: boolean; isAIAdvisorProminent: boolean
   coins: number; setCoins: (fn: (c: number) => number) => void
@@ -77,6 +80,9 @@ function FullSimulation({
   sessionStart: number; eventEffect: Record<string, number | boolean> | null
   onRoundComplete: () => void; simYear: number; onAdvanceSimDate: (months: number) => void
   scEverUsed: boolean; sessionCount: number; scenario?: Scenario | null
+  onCascadeAdd: (bot: Bot, method: 'smart' | 'classic' | 'arbitration', coins: number, round: number) => ActiveContract
+  onCascadeResolve: (id: string, won: boolean) => void
+  onCascadeReset: () => void
 }) {
   const [phase, setPhase] = useState(() => scenario ? 'choose_method' : 'select_bot')
   const [selectedBot, setSelectedBot] = useState<Bot | null>(() =>
@@ -97,6 +103,7 @@ function FullSimulation({
   const [pendingDeliverySuccess, setPendingDeliverySuccess] = useState(false)
   const [execProgress, setExecProgress] = useState(0)
   const execRafRef = useRef<number | null>(null)
+  const cascadeContractRef = useRef<ActiveContract[]>([])
 
   const isMobile = useIsMobile()
   const { isAnimating: coinAnimating, currentDelta: coinDelta, queueAnimation: queueCoinAnim } = useCoinAnimation()
@@ -145,6 +152,8 @@ function FullSimulation({
   }
 
   function handleShippingDelivered() {
+    const cascadeDirect = onCascadeAdd(selectedBot!, 'classic', selectedBot!.basePrice, simYear)
+    onCascadeResolve(cascadeDirect.id, true)
     const { reward } = computeDynamicReward(selectedBot!, crashActive, eventEffect as never)
     const profit = reward - selectedBot!.basePrice
     // Deduct payment first so the cost is visible, then add reward (matches SC UX)
@@ -166,6 +175,8 @@ function FullSimulation({
     if (coins < totalCost) { alert('Yetersiz bakiye!'); return }
     setCoins(c => c - totalCost); queueCoinAnim(-totalCost)
     const cid = genContractId(); setContractId(cid)
+    // Paralel sözleşme — önceki resolve beklenmez; motor tüm aktif contracts[]'ı tarar
+    const cascadeC = onCascadeAdd(selectedBot!, 'smart', totalCost, simYear)
     setScExecData({ params, totalCost, actualPrice })
     setPhase('sc_executing')
     const { reward } = computeDynamicReward(selectedBot!, crashActive, eventEffect as never)
@@ -192,6 +203,7 @@ function FullSimulation({
         logSimulation({ type: 'round_complete', method: 'smart', won: false, botId: selectedBot!.id, cost: totalCost })
       }
       setAutopsy(computeAutopsy('smart', selectedBot!, 0, success))
+      onCascadeResolve(cascadeC.id, success)
       setPhase('sc_result')
     }, selectedBot!.delay)
   }
@@ -201,6 +213,9 @@ function FullSimulation({
     const totalFee = fee + lawyer.fee
     if (coins < totalFee) { alert('Yetersiz bakiye!'); return }
     setCoins(c => c - totalFee); queueCoinAnim(-totalFee)
+    // Paralel sözleşme — önceki resolve beklenmez; motor tüm aktif contracts[]'ı tarar
+    const cascadeLegal = onCascadeAdd(selectedBot!, mode === 'arbitration' ? 'arbitration' : 'classic', selectedBot!.basePrice, simYear)
+    cascadeContractRef.current = [...cascadeContractRef.current, cascadeLegal]
     setSelectedLawyer(lawyer); setLegalMode(mode); setHasPlayedClassic(true)
     setStats(s => ({ ...s, classicUses: (s.classicUses || 0) + 1 }))
     setPhase('classic_tunnel')
@@ -228,6 +243,12 @@ function FullSimulation({
       triggerLossAnim()
     }
     setAutopsy(computeAutopsy('classic', selectedBot!, totalYears, won))
+    const arr = cascadeContractRef.current
+    const lastLegal = arr.length > 0 ? arr[arr.length - 1] : undefined
+    if (lastLegal) {
+      onCascadeResolve(lastLegal.id, won)
+      cascadeContractRef.current = cascadeContractRef.current.filter(c => c.id !== lastLegal.id)
+    }
     setPhase('classic_result')
   }
 
@@ -245,6 +266,7 @@ function FullSimulation({
     setOutcome(null); setAutopsy(null); setKonkordato(false); setSelectedLawyer(null)
     setLegalMode('lawsuit'); setShowConfetti(false); setShowLossFlash(false)
     setPendingDeliverySuccess(false); setExecProgress(0)
+    cascadeContractRef.current = []; onCascadeReset()
   }
 
   const lossCardStyle = { ...cardStyle, animation: showLossFlash ? 'lossFlash .8s ease-out' : undefined }
@@ -495,6 +517,8 @@ export function GamePage() {
   const abVariant = ab.variant
   const sessionStart = useRef(Date.now()).current
   const game = useGameState()
+  // --- Cascade Layer (paralel, useGameState'e bağımlı değil) ---
+  const { contracts: cascadeContracts, events: cascadeEvents, totalCapitalAtRisk, addContract: cascadeAdd, resolveContract: cascadeResolve, resetCascade } = useCascadeState()
   const [searchParams] = useSearchParams()
   const scenarioId = searchParams.get('scenario')
   const activeScenario = scenarioId ? (SCENARIOS.find(s => s.id === scenarioId) ?? null) : null
@@ -732,7 +756,38 @@ export function GamePage() {
           scEverUsed={game.stats.scUses > 0}
           sessionCount={game.sessionCount}
           scenario={activeScenario}
+          onCascadeAdd={cascadeAdd}
+          onCascadeResolve={cascadeResolve}
+          onCascadeReset={resetCascade}
         />
+
+        {/* ─── Cascade Panel — Zincirleme Etki Monitörü ─── */}
+        <div style={{ marginTop: 32, background: 'rgba(255,107,53,.04)', border: '1px solid rgba(255,107,53,.15)', borderRadius: 16, padding: 20 }}>
+          <div style={{ color: '#ff6b35', fontSize: 11, fontFamily: "'Space Mono',monospace", fontWeight: 700, letterSpacing: 2, marginBottom: 12 }}>⚠ ZİNCİRLEME ETKİ MONİTÖRÜ</div>
+          <div style={{ display: 'flex', gap: 24, marginBottom: 12, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ color: '#4a5568', fontSize: 10, fontFamily: "'Space Mono',monospace", marginBottom: 2 }}>AKTİF SÖZLEŞME</div>
+              <div style={{ color: cascadeContracts.filter(c => c.status === 'active' || c.status === 'at_risk').length > 1 ? '#f6ad55' : '#a0aec0', fontFamily: "'Space Mono',monospace", fontWeight: 700, fontSize: 16 }}>
+                {cascadeContracts.filter(c => c.status === 'active' || c.status === 'at_risk').length}
+              </div>
+            </div>
+            <div>
+              <div style={{ color: '#4a5568', fontSize: 10, fontFamily: "'Space Mono',monospace", marginBottom: 2 }}>RİSK SERMAYESİ</div>
+              <div style={{ color: totalCapitalAtRisk > 0 ? '#ff6b35' : '#00d4aa', fontFamily: "'Space Mono',monospace", fontWeight: 700, fontSize: 16 }}>{totalCapitalAtRisk} JC</div>
+            </div>
+          </div>
+          {cascadeEvents.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {cascadeEvents.map((ev, i) => (
+                <div key={i} style={{ background: 'rgba(255,68,68,.06)', border: '1px solid rgba(255,68,68,.15)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#fc8181' }}>
+                  <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, color: '#4a5568', marginRight: 8 }}>Tur {ev.round}</span>
+                  {ev.description}
+                  <span style={{ color: '#4a5568', marginLeft: 8 }}>({ev.affected.length} etkilendi)</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,.06)', display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
           {Object.entries(LEGAL_TERMS).map(([k]) => (
